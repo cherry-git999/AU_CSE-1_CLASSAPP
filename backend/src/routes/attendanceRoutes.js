@@ -1,7 +1,22 @@
 import express from 'express';
-import { lookupAttendance } from '../controllers/attendanceController.js';
+import { lookupAttendance, markAttendance, getAllAttendance } from '../controllers/attendanceController.js';
+import { protectCR } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+/**
+ * @route   POST /api/attendance/mark
+ * @desc    Mark attendance for a subject (CR only)
+ * @access  CR only (JWT protected)
+ */
+router.post('/mark', protectCR, markAttendance);
+
+/**
+ * @route   GET /api/attendance/all
+ * @desc    Get all students attendance records (CR only)
+ * @access  CR only (JWT protected)
+ */
+router.get('/all', protectCR, getAllAttendance);
 
 /**
  * @route   POST /api/attendance/lookup

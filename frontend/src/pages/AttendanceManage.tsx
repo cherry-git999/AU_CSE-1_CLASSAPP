@@ -4,10 +4,13 @@ import GlassCard from '../components/GlassCard';
 import MobileMenu from '../components/MobileMenu';
 import api from '../api/axios';
 
-interface AttendanceRecord {
+interface Student {
   _id: string;
-  studentName: string;
+  name: string;
   regNo: string;
+}
+
+interface AttendanceData {
   subject: string;
   attended: number;
   total: number;
@@ -15,67 +18,62 @@ interface AttendanceRecord {
   status: 'Eligible' | 'Condonation' | 'Detained';
 }
 
+interface StudentWithAttendance extends Student {
+  attendance: AttendanceData[];
+}
+
 const AttendanceManage = () => {
-  const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchingAttendance, setFetchingAttendance] = useState(false);
   const [error, setError] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState({ attended: 0, total: 0 });
-  const userType = localStorage.getItem('userType');
-  const isStudent = userType === 'student';
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchAttendance();
+    fetchStudents();
   }, []);
 
-  const fetchAttendance = async () => {
+  const fetchStudents = async () => {
     try {
-      const response = await api.get('/attendance');
-      setRecords(response.data);
+      const response = await api.get('/students');
+      setStudents(response.data);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch attendance');
+      setError(err.response?.data?.message || 'Failed to fetch students');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEdit = (record: AttendanceRecord) => {
-    if (isStudent) return; // Prevent editing for students
-    setEditingId(record._id);
-    setEditValues({ attended: record.attended, total: record.total });
+  const fetchStudentAttendance = async (studentId: string) => {
+    setFetchingAttendance(true);
+    setError('');
+    setAttendanceData([]);
+    
+    try {
+      const student = students.find(s => s._id === studentId);
+      if (!student) return;
+
+      // Get attendance data for this specific student
+      // Note: This would need a backend endpoint to fetch attendance by studentId
+      // For now, we'll show a placeholder message
+      const response = await api.get(`/attendance/student/${studentId}`);
+      setAttendanceData(response.data);
+    } catch (err: any) {
+      setError('Attendance data fetch endpoint not yet implemented. Use student lookup instead.');
+      setAttendanceData([]);
+    } finally {
+      setFetchingAttendance(false);
+    }
   };
 
-  const handleSave = async (id: string) => {
-    try {
-      await api.put(`/attendance/update`, {
-        id,
-        attended: editValues.attended,
-        total: editValues.total,
-      });
-
-      setRecords(
-        records.map((record) => {
-          if (record._id === id) {
-            const percentage = (editValues.attended / editValues.total) * 100;
-            let status: 'Eligible' | 'Condonation' | 'Detained' = 'Detained';
-            if (percentage >= 75) status = 'Eligible';
-            else if (percentage >= 65) status = 'Condonation';
-
-            return {
-              ...record,
-              attended: editValues.attended,
-              total: editValues.total,
-              percentage,
-              status,
-            };
-          }
-          return record;
-        })
-      );
-
-      setEditingId(null);
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to update attendance');
+  const handleStudentSelect = (studentId: string) => {
+    setSelectedStudent(studentId);
+    if (studentId) {
+      fetchStudentAttendance(studentId);
+    } else {
+      setAttendanceData([]);
     }
   };
 
@@ -92,151 +90,116 @@ const AttendanceManage = () => {
     }
   };
 
+  const filteredStudents = students.filter(
+    student =>
+      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.regNo.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <Sidebar />
       <MobileMenu />
       <div className="flex-1 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
-          {isStudent && (
-            <div className="mb-6 bg-blue-500/10 border border-blue-500/50 text-blue-400 px-4 py-3 rounded-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">👁️</span>
-                <p className="font-semibold">Read-Only Student View - You cannot edit attendance</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gold mb-8">View Attendance Records</h1>
+
+          <GlassCard className="p-6 mb-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-white/80 mb-2 font-medium">Search Student</label>
+                <input
+                  type="text"
+                  placeholder="Search by name or registration number..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
               </div>
+
+              <div>
+                <label className="block text-white/80 mb-2 font-medium">Select Student</label>
+                <select
+                  value={selectedStudent}
+                  onChange={(e) => handleStudentSelect(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-gold/50 cursor-pointer"
+                >
+                  <option value="" className="bg-gray-900 text-white py-2">-- Select a student --</option>
+                  {filteredStudents.map(student => (
+                    <option key={student._id} value={student._id} className="bg-gray-900 text-white py-2">
+                      {student.regNo} - {student.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </GlassCard>
+
+          {error && (
+            <div className="bg-yellow-500/10 border border-yellow-500/50 text-yellow-400 px-4 py-3 rounded-lg mb-6">
+              <p className="font-semibold mb-2">⚠️ Note:</p>
+              <p>{error}</p>
+              <p className="mt-2 text-sm">Students can use the "Attendance Lookup" page to view their attendance using Reg No + DOB.</p>
             </div>
           )}
 
-          <h1 className="text-3xl md:text-4xl font-bold text-gold mb-8">Attendance Management</h1>
-
           {loading ? (
             <GlassCard className="p-8 text-center">
-              <p className="text-white/60">Loading attendance records...</p>
+              <p className="text-white/60">Loading students...</p>
             </GlassCard>
-          ) : error ? (
-            <GlassCard className="p-8">
-              <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg">
-                {error}
-              </div>
+          ) : fetchingAttendance ? (
+            <GlassCard className="p-8 text-center">
+              <p className="text-white/60">Loading attendance data...</p>
             </GlassCard>
-          ) : (
+          ) : attendanceData.length > 0 ? (
             <GlassCard className="p-6">
+              <h2 className="text-xl font-bold text-white mb-4">Attendance Summary</h2>
               <div className="overflow-x-auto">
                 <table>
                   <thead>
                     <tr>
-                      <th>Student Name</th>
-                      <th>Reg No</th>
                       <th>Subject</th>
                       <th>Attended</th>
                       <th>Total</th>
                       <th>Percentage</th>
                       <th>Status</th>
-                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {records.length > 0 ? (
-                      records.map((record) => (
-                        <tr key={record._id}>
-                          <td className="font-medium">{record.studentName}</td>
-                          <td>{record.regNo}</td>
-                          <td>{record.subject}</td>
-                          <td>
-                            {editingId === record._id ? (
-                              <input
-                                type="number"
-                                value={editValues.attended}
-                                onChange={(e) =>
-                                  setEditValues({
-                                    ...editValues,
-                                    attended: parseInt(e.target.value) || 0,
-                                  })
-                                }
-                                className="w-20 px-2 py-1"
-                                min="0"
-                              />
-                            ) : (
-                              record.attended
-                            )}
-                          </td>
-                          <td>
-                            {editingId === record._id ? (
-                              <input
-                                type="number"
-                                value={editValues.total}
-                                onChange={(e) =>
-                                  setEditValues({
-                                    ...editValues,
-                                    total: parseInt(e.target.value) || 0,
-                                  })
-                                }
-                                className="w-20 px-2 py-1"
-                                min="0"
-                              />
-                            ) : (
-                              record.total
-                            )}
-                          </td>
-                          <td>
-                            <span
-                              className={`font-semibold ${
-                                record.percentage >= 75
-                                  ? 'text-green-400'
-                                  : record.percentage >= 65
-                                  ? 'text-yellow-400'
-                                  : 'text-red-400'
-                              }`}
-                            >
-                              {record.percentage.toFixed(2)}%
-                            </span>
-                          </td>
-                          <td>
-                            <span className={getStatusClass(record.status)}>
-                              {record.status}
-                            </span>
-                          </td>
-                          <td>
-                            {editingId === record._id ? (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleSave(record._id)}
-                                  className="text-green-400 hover:text-green-300 font-medium"
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  onClick={() => setEditingId(null)}
-                                  className="text-red-400 hover:text-red-300 font-medium"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
-                              !isStudent && (
-                                <button
-                                  onClick={() => handleEdit(record)}
-                                  className="text-gold hover:text-gold/80 font-medium"
-                                >
-                                  Edit
-                                </button>
-                              )
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={8} className="text-center text-white/60">
-                          No attendance records found
+                    {attendanceData.map((record, index) => (
+                      <tr key={index}>
+                        <td className="font-medium">{record.subject}</td>
+                        <td>{record.attended}</td>
+                        <td>{record.total}</td>
+                        <td>
+                          <span
+                            className={`font-semibold ${
+                              record.percentage >= 75
+                                ? 'text-green-400'
+                                : record.percentage >= 65
+                                ? 'text-yellow-400'
+                                : 'text-red-400'
+                            }`}
+                          >
+                            {record.percentage.toFixed(2)}%
+                          </span>
+                        </td>
+                        <td>
+                          <span className={getStatusClass(record.status)}>
+                            {record.status}
+                          </span>
                         </td>
                       </tr>
-                    )}
+                    ))}
                   </tbody>
                 </table>
               </div>
             </GlassCard>
-          )}
+          ) : selectedStudent ? (
+            <GlassCard className="p-8 text-center">
+              <p className="text-white/60">No attendance records found for this student</p>
+            </GlassCard>
+          ) : null}
         </div>
       </div>
     </div>

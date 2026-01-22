@@ -8,9 +8,8 @@ import api from '../api/axios';
 interface Announcement {
   _id: string;
   title: string;
-  content: string;
+  message: string;
   createdAt: string;
-  createdBy: string;
 }
 
 const Announcements = () => {
@@ -18,20 +17,25 @@ const Announcements = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const userType = localStorage.getItem('userType');
-  const isStudent = userType === 'student';
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    // Check if user is admin based on userType
+    const userType = localStorage.getItem('userType');
+    // Only admins (not students) can create announcements
+    setIsAdmin(userType !== 'student');
+    
     fetchAnnouncements();
   }, []);
 
   const fetchAnnouncements = async () => {
     try {
       const response = await api.get('/announcements');
-      setAnnouncements(response.data);
+      setAnnouncements(response.data.announcements || response.data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch announcements');
     } finally {
@@ -52,15 +56,43 @@ const Announcements = () => {
     setSubmitting(true);
 
     try {
-      const response = await api.post('/announcements', { title, content });
-      setAnnouncements([response.data, ...announcements]);
+      await api.post('/announcements', { title, message: content });
       setTitle('');
       setContent('');
       setSuccess('Announcement created successfully');
+      // Refresh announcements
+      await fetchAnnouncements();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to create announcement');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this announcement?')) {
+      return;
+    }
+
+    setDeleting(id);
+    setError('');
+    setSuccess('');
+
+    try {
+      await api.delete(`/announcements/${id}`);
+      setSuccess('Announcement deleted successfully');
+      // Refresh announcements
+      await fetchAnnouncements();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete announcement');
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -70,18 +102,10 @@ const Announcements = () => {
       <MobileMenu />
       <div className="flex-1 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
-          {isStudent && (
-            <div className="mb-6 bg-blue-500/10 border border-blue-500/50 text-blue-400 px-4 py-3 rounded-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">👁️</span>
-                <p className="font-semibold">Read-Only Student View - You cannot create announcements</p>
-              </div>
-            </div>
-          )}
-
           <h1 className="text-3xl md:text-4xl font-bold text-gold mb-8">Announcements</h1>
 
-          {!isStudent && (
+          {/* Only show create form to admin users */}
+          {isAdmin && (
             <GlassCard className="p-6 mb-8">
               <h2 className="text-xl md:text-2xl font-bold text-white mb-4">Create New Announcement</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -141,13 +165,23 @@ const Announcements = () => {
               announcements.map((announcement) => (
                 <GlassCard key={announcement._id} className="p-6">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-xl font-bold text-white">{announcement.title}</h3>
-                    <span className="text-sm text-white/50">
-                      {new Date(announcement.createdAt).toLocaleDateString()}
-                    </span>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-white">{announcement.title}</h3>
+                      <span className="text-sm text-white/50 block mt-1">
+                        {new Date(announcement.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDelete(announcement._id)}
+                        disabled={deleting === announcement._id}
+                        className="ml-4 px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {deleting === announcement._id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    )}
                   </div>
-                  <p className="text-white/70 mb-2">{announcement.content}</p>
-                  <p className="text-sm text-gold">By: {announcement.createdBy}</p>
+                  <p className="text-white/70">{announcement.message}</p>
                 </GlassCard>
               ))
             ) : (

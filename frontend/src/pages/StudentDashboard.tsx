@@ -1,16 +1,118 @@
+import { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import GlassCard from '../components/GlassCard';
 import MobileMenu from '../components/MobileMenu';
+import api from '../api/axios';
+
+interface Announcement {
+  title: string;
+  message: string;
+  createdAt: string;
+}
+
+interface AttendanceRecord {
+  subject: string;
+  attended: number;
+  total: number;
+  percentage: number;
+  status: string;
+}
 
 const StudentDashboard = () => {
   const student = JSON.parse(localStorage.getItem('student') || '{}');
+  const [stats, setStats] = useState([
+    { label: 'Your Attendance', value: '...', icon: '📊', gradient: 'from-green-500 to-emerald-500' },
+    { label: 'Total Students', value: '...', icon: '👥', gradient: 'from-blue-500 to-cyan-500' },
+    { label: 'Your Leaves', value: '...', icon: '📋', gradient: 'from-orange-500 to-amber-500' },
+    { label: 'Announcements', value: '...', icon: '📢', gradient: 'from-purple-500 to-pink-500' },
+  ]);
+  const [recentAnnouncements, setRecentAnnouncements] = useState<Announcement[]>([]);
+  const [subjectAttendance, setSubjectAttendance] = useState<AttendanceRecord[]>([]);
 
-  const stats = [
-    { label: 'Your Attendance', value: '82%', icon: '📊', gradient: 'from-green-500 to-emerald-500' },
-    { label: 'Total Students', value: '60', icon: '👥', gradient: 'from-blue-500 to-cyan-500' },
-    { label: 'Your Leaves', value: '3', icon: '📋', gradient: 'from-orange-500 to-amber-500' },
-    { label: 'Announcements', value: '12', icon: '📢', gradient: 'from-purple-500 to-pink-500' },
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch student's attendance data
+      const studentData = JSON.parse(localStorage.getItem('student') || '{}');
+      let overallAttendance = 0;
+      let totalLeaves = 0;
+
+      if (studentData.attendance && Array.isArray(studentData.attendance)) {
+        // Calculate overall attendance percentage
+        let totalAttended = 0;
+        let totalClasses = 0;
+        
+        studentData.attendance.forEach((record: any) => {
+          totalAttended += record.attended || 0;
+          totalClasses += record.total || 0;
+          
+          // Count leaves (absent days)
+          totalLeaves += (record.total || 0) - (record.attended || 0);
+        });
+
+        if (totalClasses > 0) {
+          overallAttendance = Math.round((totalAttended / totalClasses) * 100);
+        }
+
+        // Set subject-wise attendance
+        setSubjectAttendance(studentData.attendance);
+      }
+
+      // Fetch announcements
+      const announcementsResponse = await api.get('/announcements');
+      const allAnnouncements = announcementsResponse.data.announcements || [];
+      const announcementsCount = allAnnouncements.length || 0;
+      
+      // Get recent 3 announcements
+      setRecentAnnouncements(allAnnouncements.slice(0, 3));
+
+      // Fetch total students count (public endpoint)
+      let totalStudents = 'N/A';
+      try {
+        const studentsResponse = await api.get('/students/count');
+        totalStudents = studentsResponse.data.count?.toString() || 'N/A';
+      } catch (err) {
+        console.error('Error fetching student count:', err);
+        totalStudents = 'N/A';
+      }
+
+      // Update stats with real data
+      setStats([
+        { 
+          label: 'Your Attendance', 
+          value: `${overallAttendance}%`, 
+          icon: '📊', 
+          gradient: overallAttendance >= 75 ? 'from-green-500 to-emerald-500' : 
+                   overallAttendance >= 65 ? 'from-orange-500 to-amber-500' : 
+                   'from-red-500 to-pink-500' 
+        },
+        { 
+          label: 'Total Students', 
+          value: totalStudents, 
+          icon: '👥', 
+          gradient: 'from-blue-500 to-cyan-500' 
+        },
+        { 
+          label: 'Your Leaves', 
+          value: totalLeaves.toString(), 
+          icon: '📋', 
+          gradient: 'from-orange-500 to-amber-500' 
+        },
+        { 
+          label: 'Announcements', 
+          value: announcementsCount.toString(), 
+          icon: '📢', 
+          gradient: 'from-purple-500 to-pink-500' 
+        },
+      ]);
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -45,7 +147,7 @@ const StudentDashboard = () => {
             ))}
           </div>
 
-          <GlassCard className="p-6 md:p-8">
+          <GlassCard className="p-6 md:p-8 mb-8">
             <h2 className="text-xl md:text-2xl font-bold text-white mb-6">Quick Access</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <a
@@ -68,6 +170,68 @@ const StudentDashboard = () => {
               </a>
             </div>
           </GlassCard>
+
+          {/* Subject-wise Attendance */}
+          {subjectAttendance.length > 0 && (
+            <GlassCard className="p-6 md:p-8 mb-8">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-6">Subject-wise Attendance</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {subjectAttendance.map((record, index) => (
+                  <div key={index} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                    <h3 className="text-lg font-semibold text-white mb-2">{record.subject}</h3>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-white/60 text-sm">Attended</span>
+                      <span className="text-white font-medium">{record.attended} / {record.total}</span>
+                    </div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-white/60 text-sm">Percentage</span>
+                      <span className={`font-bold ${
+                        record.percentage >= 75 ? 'text-green-400' : 
+                        record.percentage >= 65 ? 'text-orange-400' : 
+                        'text-red-400'
+                      }`}>
+                        {record.percentage}%
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                        record.status === 'Eligible' ? 'bg-green-500/20 text-green-400' :
+                        record.status === 'Condonation' ? 'bg-orange-500/20 text-orange-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        {record.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          )}
+
+          {/* Recent Announcements */}
+          {recentAnnouncements.length > 0 && (
+            <GlassCard className="p-6 md:p-8">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl md:text-2xl font-bold text-white">Recent Announcements</h2>
+                <a href="/student/announcements" className="text-cyan-400 hover:text-cyan-300 text-sm font-medium">
+                  View All →
+                </a>
+              </div>
+              <div className="space-y-4">
+                {recentAnnouncements.map((announcement, index) => (
+                  <div key={index} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-lg font-semibold text-white">{announcement.title}</h3>
+                      <span className="text-xs text-white/50">
+                        {new Date(announcement.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-white/70 text-sm">{announcement.message}</p>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          )}
         </div>
       </div>
     </div>

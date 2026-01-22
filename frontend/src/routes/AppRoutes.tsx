@@ -9,6 +9,8 @@ import AdminDashboard from '../pages/AdminDashboard';
 import StudentDashboard from '../pages/StudentDashboard';
 import AttendanceLookup from '../pages/AttendanceLookup';
 import AttendanceManage from '../pages/AttendanceManage';
+import MarkAttendance from '../pages/MarkAttendance';
+import ViewAllAttendance from '../pages/ViewAllAttendance';
 import Students from '../pages/Students';
 import Leaves from '../pages/Leaves';
 import Announcements from '../pages/Announcements';
@@ -44,6 +46,24 @@ const AppRoutes = () => {
         />
         <Route
           path="/admin/attendance"
+          element={
+            <PrivateRoute>
+              <Navbar />
+              <MarkAttendance />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/attendance/view"
+          element={
+            <PrivateRoute>
+              <Navbar />
+              <ViewAllAttendance />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/attendance/manage"
           element={
             <PrivateRoute>
               <Navbar />
@@ -94,7 +114,7 @@ const AppRoutes = () => {
           element={
             <StudentPrivateRoute>
               <Navbar />
-              <AttendanceManage />
+              <AttendanceLookup />
             </StudentPrivateRoute>
           }
         />

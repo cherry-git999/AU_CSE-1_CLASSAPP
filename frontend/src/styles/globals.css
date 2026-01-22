@@ -88,6 +88,46 @@ input::placeholder {
   color: rgba(255, 255, 255, 0.35);
 }
 
+/* Enhanced Select dropdown styles for better visibility */
+select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236366f1' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+select option {
+  background-color: #1a1a1a;
+  color: white;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  font-weight: 600;
+}
+
+/* For better mobile responsiveness */
+@media (max-width: 768px) {
+  input, select, textarea {
+    padding: 0.75rem 1rem;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  select {
+    padding-right: 2.25rem;
+  }
+}
+
 /* Button Styles */
 .btn-primary {
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
@@ -147,6 +187,14 @@ input::placeholder {
   transform: translateY(-2px);
 }
 
+/* Responsive button styles */
+@media (max-width: 768px) {
+  .btn-primary, .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9375rem;
+  }
+}
+
 /* Table Styles */
 table {
   width: 100%;
@@ -160,6 +208,7 @@ th {
   text-align: left;
   padding: 1rem 1.25rem;
   border-bottom: 2px solid rgba(99, 102, 241, 0.3);
+  white-space: nowrap;
 }
 
 td {
@@ -169,6 +218,18 @@ td {
 
 tr:hover {
   background: rgba(99, 102, 241, 0.05);
+}
+
+/* Responsive table for mobile */
+@media (max-width: 768px) {
+  th, td {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.875rem;
+  }
+  
+  th {
+    font-size: 0.8125rem;
+  }
 }
 
 /* Status Badges */

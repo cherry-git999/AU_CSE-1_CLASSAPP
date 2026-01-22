@@ -30,7 +30,7 @@ const attendanceSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Eligible', 'Not Eligible', 'At Risk'],
+    enum: ['Eligible', 'Condonation', 'Detained'],
     default: 'Eligible'
   }
 }, {
@@ -49,9 +49,9 @@ attendanceSchema.pre('save', function(next) {
     if (this.percentage >= 75) {
       this.status = 'Eligible';
     } else if (this.percentage >= 65) {
-      this.status = 'At Risk';
+      this.status = 'Condonation';
     } else {
-      this.status = 'Not Eligible';
+      this.status = 'Detained';
     }
   } else {
     this.percentage = 0;

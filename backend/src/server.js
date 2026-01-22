@@ -4,6 +4,8 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import authRoutes from './routes/authRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
+import announcementRoutes from './routes/announcementRoutes.js';
+import studentRoutes from './routes/studentRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -25,6 +27,8 @@ mongoose.connect(MONGODB_URI)
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use('/api/students', studentRoutes);
 
 // Health check
 app.get('/', (req, res) => {

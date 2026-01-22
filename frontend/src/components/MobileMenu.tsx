@@ -10,8 +10,9 @@ const MobileMenu = () => {
   const baseMenuItems = [
     { name: 'Dashboard', path: isStudent ? '/student/dashboard' : '/admin/dashboard', icon: '📊' },
     { name: 'Students', path: isStudent ? '/student/students' : '/admin/students', icon: '👥' },
-    { name: 'Attendance', path: isStudent ? '/student/attendance' : '/admin/attendance', icon: '📝' },
-    { name: 'Leave Requests', path: isStudent ? '/student/leaves' : '/admin/leaves', icon: '📋' },
+    { name: isStudent ? 'Attendance' : 'Mark Attendance', path: isStudent ? '/student/attendance' : '/admin/attendance', icon: '📝' },
+    ...(!isStudent ? [{ name: 'View All Attendance', path: '/admin/attendance/view', icon: '📋' }] : []),
+    { name: 'Leave Requests', path: isStudent ? '/student/leaves' : '/admin/leaves', icon: '📄' },
     { name: 'Announcements', path: isStudent ? '/student/announcements' : '/admin/announcements', icon: '📢' },
   ];
 
