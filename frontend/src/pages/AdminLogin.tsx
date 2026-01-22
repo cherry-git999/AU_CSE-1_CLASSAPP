@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GlassCard from '../components/GlassCard';
-// import api from '../api/axios'; // Uncomment when using real backend
+import api from '../api/axios';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -22,39 +22,6 @@ const AdminLogin = () => {
 
     setLoading(true);
 
-    // Dummy credentials for testing (remove when backend is ready)
-    const dummyAdmins = [
-      { email: 'admin@cse1.com', password: 'admin123', name: 'Admin User', role: 'CR' },
-      { email: 'cr@cse1.com', password: 'cr123', name: 'Class Representative', role: 'CR' },
-      { email: 'lr@cse1.com', password: 'lr123', name: 'Lab Representative', role: 'LR' },
-    ];
-
-    // Check dummy credentials
-    const matchedAdmin = dummyAdmins.find(
-      a => a.email.toLowerCase() === email.toLowerCase() && a.password === password
-    );
-
-    if (matchedAdmin) {
-      // Dummy authentication success
-      const dummyToken = 'dummy-admin-jwt-token-' + Date.now();
-      const userData = {
-        id: 'admin-' + matchedAdmin.role,
-        name: matchedAdmin.name,
-        email: matchedAdmin.email,
-        role: matchedAdmin.role
-      };
-
-      localStorage.setItem('token', dummyToken);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.removeItem('userType'); // Admin doesn't set userType
-
-      setLoading(false);
-      navigate('/admin/dashboard');
-      return;
-    }
-
-    // If not dummy, try real API (uncomment when backend is ready)
-    /*
     try {
       const response = await api.post('/auth/login', { email, password });
       const { token, user } = response.data;
@@ -68,10 +35,6 @@ const AdminLogin = () => {
     } finally {
       setLoading(false);
     }
-    */
-
-    setError('Invalid credentials. Try: admin@cse1.com / admin123');
-    setLoading(false);
   };
 
   return (
@@ -127,17 +90,6 @@ const AdminLogin = () => {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-
-        <div className="mt-6 p-4 bg-gradient-to-br from-primary-500/10 to-accent-500/10 border border-primary-500/20 rounded-xl backdrop-blur-sm">
-          <p className="text-primary-300 text-sm font-semibold mb-2 flex items-center gap-2">
-            <span>🔑</span> Test Credentials:
-          </p>
-          <div className="space-y-1 text-xs text-white/70">
-            <p>• Email: <span className="text-primary-300 font-mono">admin@cse1.com</span> | Pass: <span className="text-primary-300 font-mono">admin123</span></p>
-            <p>• Email: <span className="text-primary-300 font-mono">cr@cse1.com</span> | Pass: <span className="text-primary-300 font-mono">cr123</span></p>
-            <p>• Email: <span className="text-primary-300 font-mono">lr@cse1.com</span> | Pass: <span className="text-primary-300 font-mono">lr123</span></p>
-          </div>
-        </div>
       </GlassCard>
     </div>
   );

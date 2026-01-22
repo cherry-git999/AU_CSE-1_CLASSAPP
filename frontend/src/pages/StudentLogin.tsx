@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GlassCard from '../components/GlassCard';
-// import api from '../api/axios'; // Uncomment when using real backend
+import api from '../api/axios';
 
 const StudentLogin = () => {
   const [regNo, setRegNo] = useState('');
@@ -22,40 +22,6 @@ const StudentLogin = () => {
 
     setLoading(true);
 
-    // Dummy credentials for testing (remove when backend is ready)
-    const dummyStudents = [
-      { regNo: '21BCS001', dob: '2003-05-15', name: 'John Doe', email: 'john@example.com' },
-      { regNo: '21BCS002', dob: '2003-08-20', name: 'Jane Smith', email: 'jane@example.com' },
-      { regNo: '21BCS003', dob: '2003-03-10', name: 'Mike Johnson', email: 'mike@example.com' },
-    ];
-
-    // Check dummy credentials
-    const matchedStudent = dummyStudents.find(
-      s => s.regNo.toLowerCase() === regNo.toLowerCase() && s.dob === dateOfBirth
-    );
-
-    if (matchedStudent) {
-      // Dummy authentication success
-      const dummyToken = 'dummy-student-jwt-token-' + Date.now();
-      const studentData = {
-        id: 'student-' + matchedStudent.regNo,
-        name: matchedStudent.name,
-        regNo: matchedStudent.regNo,
-        email: matchedStudent.email,
-        dateOfBirth: matchedStudent.dob
-      };
-
-      localStorage.setItem('studentToken', dummyToken);
-      localStorage.setItem('student', JSON.stringify(studentData));
-      localStorage.setItem('userType', 'student');
-
-      setLoading(false);
-      navigate('/student/dashboard');
-      return;
-    }
-
-    // If not dummy, try real API (uncomment when backend is ready)
-    /*
     try {
       const response = await api.post('/auth/student-login', { regNo, dateOfBirth });
       const { token, student } = response.data;
@@ -70,10 +36,6 @@ const StudentLogin = () => {
     } finally {
       setLoading(false);
     }
-    */
-
-    setError('Invalid credentials. Try: 21BCS001 / 2003-05-15');
-    setLoading(false);
   };
 
   return (
@@ -132,17 +94,6 @@ const StudentLogin = () => {
         <p className="text-white/50 text-sm text-center mt-6">
           Students have view-only access to all modules
         </p>
-
-        <div className="mt-4 p-4 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-xl backdrop-blur-sm">
-          <p className="text-cyan-300 text-sm font-semibold mb-2 flex items-center gap-2">
-            <span>🔑</span> Test Credentials:
-          </p>
-          <div className="space-y-1 text-xs text-white/70">
-            <p>• Reg No: <span className="text-cyan-300 font-mono">21BCS001</span> | DOB: <span className="text-cyan-300 font-mono">2003-05-15</span></p>
-            <p>• Reg No: <span className="text-cyan-300 font-mono">21BCS002</span> | DOB: <span className="text-cyan-300 font-mono">2003-08-20</span></p>
-            <p>• Reg No: <span className="text-cyan-300 font-mono">21BCS003</span> | DOB: <span className="text-cyan-300 font-mono">2003-03-10</span></p>
-          </div>
-        </div>
       </GlassCard>
     </div>
   );
