@@ -5,9 +5,11 @@ interface StudentPrivateRouteProps {
 }
 
 const StudentPrivateRoute = ({ children }: StudentPrivateRouteProps) => {
-  const studentToken = localStorage.getItem('studentToken');
+  const student = localStorage.getItem('student');
+  const userType = localStorage.getItem('userType');
 
-  if (!studentToken) {
+  // Check if student data exists and userType is 'student'
+  if (!student || userType !== 'student') {
     return <Navigate to="/student/login" replace />;
   }
 

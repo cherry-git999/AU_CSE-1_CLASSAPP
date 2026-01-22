@@ -4,7 +4,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const token = localStorage.getItem('token');
-  const studentToken = localStorage.getItem('studentToken');
+  const student = localStorage.getItem('student');
   const userType = localStorage.getItem('userType');
 
   const handleLogout = () => {
@@ -40,7 +40,7 @@ const Navbar = () => {
           </Link>
         </div>
         
-        {(token || studentToken) && (
+        {(token || student) && (
           <div className="flex items-center gap-4">
             {userType === 'student' && (
               <span className="hidden md:flex items-center gap-2 text-sm bg-blue-500/20 text-blue-300 font-medium px-3 py-1.5 rounded-full border border-blue-500/30">

@@ -23,15 +23,33 @@ const StudentLogin = () => {
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/student-login', { regNo, dateOfBirth });
-      const { token, student } = response.data;
+      console.log('Sending request:', { regNo: regNo.trim(), dob: dateOfBirth });
+      
+      // Call the attendance lookup API (no JWT token returned)
+      const response = await api.post('/attendance/lookup', { 
+        regNo: regNo.trim(), 
+        dob: dateOfBirth // Already in YYYY-MM-DD format from date input
+      });
+      
+      console.log('Response received:', response.data);
+      
+      const { name, regNo: studentRegNo, attendance } = response.data;
 
-      localStorage.setItem('studentToken', token);
-      localStorage.setItem('student', JSON.stringify(student));
+      // Store student info (no token for students - just lookup data)
+      const studentData = { 
+        name, 
+        regNo: studentRegNo, 
+        attendance 
+      };
+      
+      console.log('Storing student data:', studentData);
+      localStorage.setItem('student', JSON.stringify(studentData));
       localStorage.setItem('userType', 'student');
-
+      
+      console.log('Navigating to dashboard...');
       navigate('/student/dashboard');
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
@@ -59,7 +77,7 @@ const StudentLogin = () => {
               type="text"
               value={regNo}
               onChange={(e) => setRegNo(e.target.value)}
-              placeholder="e.g., 21BCS001"
+              placeholder="CSE002"
               className="w-full"
               disabled={loading}
             />
