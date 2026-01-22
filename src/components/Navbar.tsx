@@ -23,19 +23,19 @@ const Navbar = () => {
   const showBackButton = location.pathname !== '/' && location.pathname !== '/admin/dashboard' && location.pathname !== '/student/dashboard';
 
   return (
-    <nav className="bg-black/50 backdrop-blur-lg border-b border-white/10 px-4 md:px-6 py-4">
+    <nav className="bg-gradient-to-r from-black/60 via-primary-900/40 to-black/60 backdrop-blur-xl border-b border-white/10 px-4 md:px-6 py-4 shadow-lg">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center gap-4">
           {showBackButton && (
             <button
               onClick={handleBack}
-              className="md:hidden text-white/70 hover:text-gold transition-colors"
+              className="md:hidden text-white/70 hover:text-primary-400 transition-colors"
               title="Go back"
             >
               ← Back
             </button>
           )}
-          <Link to="/" className="text-xl md:text-2xl font-bold text-gold">
+          <Link to="/" className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
             CSE 1 Official
           </Link>
         </div>
@@ -43,13 +43,13 @@ const Navbar = () => {
         {(token || studentToken) && (
           <div className="flex items-center gap-4">
             {userType === 'student' && (
-              <span className="hidden md:block text-sm text-blue-400 font-medium">
-                👁️ Read-Only Mode
+              <span className="hidden md:flex items-center gap-2 text-sm bg-blue-500/20 text-blue-300 font-medium px-3 py-1.5 rounded-full border border-blue-500/30">
+                <span>👁️</span> View Mode
               </span>
             )}
             <button
               onClick={handleLogout}
-              className="text-white/70 hover:text-gold transition-colors text-sm md:text-base"
+              className="text-white/70 hover:text-primary-400 transition-colors text-sm md:text-base font-medium"
             >
               Logout
             </button>

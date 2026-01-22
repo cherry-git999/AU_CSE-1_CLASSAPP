@@ -75,10 +75,16 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <GlassCard className="w-full max-w-md p-8">
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-radial from-primary-500/10 via-transparent to-transparent"></div>
+      
+      <GlassCard className="w-full max-w-md p-8 relative z-10">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gold mb-2">Admin Login</h1>
+          <div className="inline-block p-3 bg-gradient-to-br from-primary-500/20 to-accent-500/20 rounded-2xl mb-4">
+            <span className="text-4xl">🔐</span>
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent mb-2">Admin Login</h1>
           <p className="text-white/60">CR / LR Access</p>
         </div>
 
@@ -108,7 +114,7 @@ const AdminLogin = () => {
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg">
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl backdrop-blur-sm">
               {error}
             </div>
           )}
@@ -122,12 +128,14 @@ const AdminLogin = () => {
           </button>
         </form>
 
-        <div className="mt-6 p-4 bg-gold/10 border border-gold/30 rounded-lg">
-          <p className="text-gold text-sm font-semibold mb-2">🔑 Test Credentials:</p>
+        <div className="mt-6 p-4 bg-gradient-to-br from-primary-500/10 to-accent-500/10 border border-primary-500/20 rounded-xl backdrop-blur-sm">
+          <p className="text-primary-300 text-sm font-semibold mb-2 flex items-center gap-2">
+            <span>🔑</span> Test Credentials:
+          </p>
           <div className="space-y-1 text-xs text-white/70">
-            <p>• Email: <span className="text-gold font-mono">admin@cse1.com</span> | Pass: <span className="text-gold font-mono">admin123</span></p>
-            <p>• Email: <span className="text-gold font-mono">cr@cse1.com</span> | Pass: <span className="text-gold font-mono">cr123</span></p>
-            <p>• Email: <span className="text-gold font-mono">lr@cse1.com</span> | Pass: <span className="text-gold font-mono">lr123</span></p>
+            <p>• Email: <span className="text-primary-300 font-mono">admin@cse1.com</span> | Pass: <span className="text-primary-300 font-mono">admin123</span></p>
+            <p>• Email: <span className="text-primary-300 font-mono">cr@cse1.com</span> | Pass: <span className="text-primary-300 font-mono">cr123</span></p>
+            <p>• Email: <span className="text-primary-300 font-mono">lr@cse1.com</span> | Pass: <span className="text-primary-300 font-mono">lr123</span></p>
           </div>
         </div>
       </GlassCard>

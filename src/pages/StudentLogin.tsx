@@ -77,10 +77,16 @@ const StudentLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <GlassCard className="w-full max-w-md p-8">
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-radial from-cyan-500/10 via-transparent to-transparent"></div>
+      
+      <GlassCard className="w-full max-w-md p-8 relative z-10">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gold mb-2">Student Login</h1>
+          <div className="inline-block p-3 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-2xl mb-4">
+            <span className="text-4xl">👨‍🎓</span>
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-2">Student Login</h1>
           <p className="text-white/60">View-Only Access</p>
         </div>
 
@@ -109,7 +115,7 @@ const StudentLogin = () => {
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg">
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl backdrop-blur-sm">
               {error}
             </div>
           )}
@@ -127,12 +133,14 @@ const StudentLogin = () => {
           Students have view-only access to all modules
         </p>
 
-        <div className="mt-4 p-4 bg-gold/10 border border-gold/30 rounded-lg">
-          <p className="text-gold text-sm font-semibold mb-2">🔑 Test Credentials:</p>
+        <div className="mt-4 p-4 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-xl backdrop-blur-sm">
+          <p className="text-cyan-300 text-sm font-semibold mb-2 flex items-center gap-2">
+            <span>🔑</span> Test Credentials:
+          </p>
           <div className="space-y-1 text-xs text-white/70">
-            <p>• Reg No: <span className="text-gold font-mono">21BCS001</span> | DOB: <span className="text-gold font-mono">2003-05-15</span></p>
-            <p>• Reg No: <span className="text-gold font-mono">21BCS002</span> | DOB: <span className="text-gold font-mono">2003-08-20</span></p>
-            <p>• Reg No: <span className="text-gold font-mono">21BCS003</span> | DOB: <span className="text-gold font-mono">2003-03-10</span></p>
+            <p>• Reg No: <span className="text-cyan-300 font-mono">21BCS001</span> | DOB: <span className="text-cyan-300 font-mono">2003-05-15</span></p>
+            <p>• Reg No: <span className="text-cyan-300 font-mono">21BCS002</span> | DOB: <span className="text-cyan-300 font-mono">2003-08-20</span></p>
+            <p>• Reg No: <span className="text-cyan-300 font-mono">21BCS003</span> | DOB: <span className="text-cyan-300 font-mono">2003-03-10</span></p>
           </div>
         </div>
       </GlassCard>
