@@ -1,6 +1,7 @@
 import Student from '../models/Student.js';
 import Attendance from '../models/Attendance.js';
 import AttendanceRecord from '../models/AttendanceRecord.js';
+import DailyAttendance from '../models/DailyAttendance.js';
 
 // Allowed subjects list
 const ALLOWED_SUBJECTS = ['ME', 'MP', 'DBMS', 'DAA', 'FLAT'];
@@ -28,9 +29,9 @@ export const markAttendance = async (req, res) => {
       });
     }
 
-    // Validate date format
-    const attendanceDate = new Date(date);
-    if (isNaN(attendanceDate.getTime())) {
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
       return res.status(400).json({ 
         message: 'Invalid date format. Use YYYY-MM-DD' 
       });
@@ -43,21 +44,30 @@ export const markAttendance = async (req, res) => {
       });
     }
 
+    // Check if attendance already exists for this date + subject
+    const existingAttendance = await DailyAttendance.findOne({ date, subject });
+    if (existingAttendance) {
+      return res.status(400).json({ 
+        message: `Attendance already marked for ${subject} on ${date}` 
+      });
+    }
+
     // Process each student record
+    const dailyRecords = [];
     const results = [];
     const errors = [];
 
     for (const record of records) {
       try {
-        const { studentId, present } = record;
+        const { studentId, status } = record;
 
         if (!studentId) {
           errors.push({ studentId: 'unknown', error: 'Student ID is required' });
           continue;
         }
 
-        if (typeof present !== 'boolean') {
-          errors.push({ studentId, error: 'Present field must be boolean' });
+        if (!status || !['Present', 'Absent'].includes(status)) {
+          errors.push({ studentId, error: 'Status must be "Present" or "Absent"' });
           continue;
         }
 
@@ -68,7 +78,13 @@ export const markAttendance = async (req, res) => {
           continue;
         }
 
-        // Find or create attendance record for this student and subject
+        // Add to daily records
+        dailyRecords.push({
+          studentId,
+          status
+        });
+
+        // Find or create attendance summary for this student and subject
         let attendanceRecord = await Attendance.findOne({ 
           studentId, 
           subject 
@@ -79,28 +95,19 @@ export const markAttendance = async (req, res) => {
           attendanceRecord = new Attendance({
             studentId,
             subject,
-            attended: present ? 1 : 0,
+            attended: status === 'Present' ? 1 : 0,
             total: 1
           });
         } else {
           // Update existing record
           attendanceRecord.total += 1;
-          if (present) {
+          if (status === 'Present') {
             attendanceRecord.attended += 1;
           }
         }
 
         // Save (pre-save hook will calculate percentage and status)
         await attendanceRecord.save();
-
-        // Also create individual attendance record for date tracking
-        await AttendanceRecord.create({
-          studentId,
-          subject,
-          date: attendanceDate,
-          present,
-          markedBy: 'CR'
-        });
 
         results.push({
           studentId,
@@ -120,6 +127,16 @@ export const markAttendance = async (req, res) => {
           error: 'Failed to update attendance' 
         });
       }
+    }
+
+    // Save DailyAttendance document (single source of truth)
+    if (dailyRecords.length > 0) {
+      await DailyAttendance.create({
+        date,
+        subject,
+        records: dailyRecords,
+        markedBy: 'CR'
+      });
     }
 
     // Send response
@@ -144,11 +161,12 @@ export const markAttendance = async (req, res) => {
 /**
  * Student Attendance Lookup Controller
  * Validates registration number and DOB, returns student info and attendance
+ * Can optionally filter by specific date
  * This is NOT authentication - it's a read-only lookup
  */
 export const lookupAttendance = async (req, res) => {
   try {
-    const { regNo, dob } = req.body;
+    const { regNo, dob, date } = req.body;
 
     // Validate request body
     if (!regNo || !dob) {
@@ -188,15 +206,65 @@ export const lookupAttendance = async (req, res) => {
       });
     }
 
-    // Fetch attendance records for this student
+    // If date is provided, return date-specific attendance
+    if (date) {
+      // Validate date format
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date)) {
+        return res.status(400).json({ 
+          message: 'Invalid date format. Use YYYY-MM-DD' 
+        });
+      }
+
+      // Get all subjects conducted on this date
+      const dailyAttendances = await DailyAttendance.find({ date }).lean();
+
+      if (dailyAttendances.length === 0) {
+        return res.status(200).json({
+          name: student.name,
+          regNo: student.regNo,
+          date,
+          message: 'No classes conducted on this date',
+          subjects: []
+        });
+      }
+
+      // Extract this student's attendance for the date
+      const subjects = dailyAttendances.map(dailyAtt => {
+        const studentRecord = dailyAtt.records.find(
+          r => r.studentId.toString() === student._id.toString()
+        );
+
+        return {
+          subject: dailyAtt.subject,
+          status: studentRecord ? studentRecord.status : 'Not Marked'
+        };
+      });
+
+      // Get overall attendance summary
+      const attendanceSummary = await Attendance.find({ 
+        studentId: student._id 
+      }).select('subject attended total percentage status -_id').lean();
+
+      return res.status(200).json({
+        name: student.name,
+        regNo: student.regNo,
+        date,
+        subjects,
+        overallAttendance: attendanceSummary.map(record => ({
+          subject: record.subject,
+          attended: record.attended,
+          total: record.total,
+          percentage: record.percentage,
+          status: record.status
+        }))
+      });
+    }
+
+    // Default: return overall attendance summary (original behavior)
     const attendanceRecords = await Attendance.find({ 
       studentId: student._id 
     }).select('subject attended total percentage status -_id');
-
-    // Fetch detailed date-wise attendance records
-    const detailedRecords = await AttendanceRecord.find({
-      studentId: student._id
-    }).select('subject date present -_id').sort({ date: -1 }).lean();
 
     // Format attendance data
     const attendance = attendanceRecords.map(record => ({
@@ -211,8 +279,7 @@ export const lookupAttendance = async (req, res) => {
     res.status(200).json({
       name: student.name,
       regNo: student.regNo,
-      attendance: attendance,
-      detailedRecords: detailedRecords
+      attendance: attendance
     });
 
   } catch (error) {
@@ -230,11 +297,24 @@ export const lookupAttendance = async (req, res) => {
  */
 export const getAllAttendance = async (req, res) => {
   try {
+    console.log('getAllAttendance called');
+    
     // Get all students
     const students = await Student.find().select('_id name regNo').lean();
+    console.log(`Found ${students.length} students`);
+
+    if (students.length === 0) {
+      console.warn('No students found in database');
+      return res.status(200).json({
+        count: 0,
+        data: [],
+        message: 'No students found. Please import students first.'
+      });
+    }
 
     // Get all attendance records
     const attendanceRecords = await Attendance.find().lean();
+    console.log(`Found ${attendanceRecords.length} attendance records`);
 
     // Build a map of attendance by studentId
     const attendanceMap = {};
@@ -276,6 +356,7 @@ export const getAllAttendance = async (req, res) => {
       };
     });
 
+    console.log(`Returning ${result.length} student records`);
     res.status(200).json({
       count: result.length,
       data: result
@@ -284,7 +365,98 @@ export const getAllAttendance = async (req, res) => {
   } catch (error) {
     console.error('Get all attendance error:', error);
     res.status(500).json({ 
-      message: 'Server error while fetching attendance records' 
+      message: 'Server error while fetching attendance records',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get Attendance by Date (CR Only)
+ * Returns attendance records for a specific date and optional subject filter
+ * Access: CR only (JWT protected)
+ */
+export const getAttendanceByDate = async (req, res) => {
+  try {
+    const { date, subject } = req.query;
+
+    // Validate date
+    if (!date) {
+      return res.status(400).json({ 
+        message: 'Date is required (format: YYYY-MM-DD)' 
+      });
+    }
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      return res.status(400).json({ 
+        message: 'Invalid date format. Use YYYY-MM-DD' 
+      });
+    }
+
+    // Build query
+    const query = { date };
+    if (subject) {
+      if (!ALLOWED_SUBJECTS.includes(subject)) {
+        return res.status(400).json({ 
+          message: `Invalid subject. Allowed subjects: ${ALLOWED_SUBJECTS.join(', ')}` 
+        });
+      }
+      query.subject = subject;
+    }
+
+    // Get daily attendance records for the date (and subject if specified)
+    const dailyAttendances = await DailyAttendance.find(query)
+      .populate('records.studentId', 'regNo name')
+      .lean();
+
+    if (dailyAttendances.length === 0) {
+      return res.status(200).json({
+        date,
+        subject: subject || 'All subjects',
+        message: 'No attendance records found for this date',
+        data: []
+      });
+    }
+
+    // Format the response
+    const result = [];
+
+    for (const dailyAtt of dailyAttendances) {
+      for (const record of dailyAtt.records) {
+        // Get student's overall attendance for this subject
+        const studentAttendance = await Attendance.findOne({
+          studentId: record.studentId._id,
+          subject: dailyAtt.subject
+        }).lean();
+
+        result.push({
+          regNo: record.studentId.regNo,
+          name: record.studentId.name,
+          subject: dailyAtt.subject,
+          status: record.status,
+          attended: studentAttendance ? studentAttendance.attended : 0,
+          total: studentAttendance ? studentAttendance.total : 0,
+          percentage: studentAttendance ? studentAttendance.percentage : 0,
+          overallStatus: studentAttendance ? studentAttendance.status : 'N/A'
+        });
+      }
+    }
+
+    // Sort by regNo
+    result.sort((a, b) => a.regNo.localeCompare(b.regNo));
+
+    res.status(200).json({
+      date,
+      subject: subject || 'All subjects',
+      count: result.length,
+      data: result
+    });
+
+  } catch (error) {
+    console.error('Get attendance by date error:', error);
+    res.status(500).json({ 
+      message: 'Server error while fetching attendance by date' 
     });
   }
 };

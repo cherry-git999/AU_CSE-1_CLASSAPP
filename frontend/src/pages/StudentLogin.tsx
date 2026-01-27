@@ -39,6 +39,7 @@ const StudentLogin = () => {
       const studentData = { 
         name, 
         regNo: studentRegNo, 
+        dob: dateOfBirth, // Store DOB for future use
         attendance 
       };
       

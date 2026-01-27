@@ -6,6 +6,7 @@ import authRoutes from './routes/authRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
 import announcementRoutes from './routes/announcementRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
+import leaveRoutes from './routes/leaveRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -29,6 +30,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/api/leaves', leaveRoutes);
 
 // Health check
 app.get('/', (req, res) => {

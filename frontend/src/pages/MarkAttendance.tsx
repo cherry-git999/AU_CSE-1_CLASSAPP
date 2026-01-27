@@ -12,7 +12,7 @@ interface Student {
 
 interface AttendanceRecord {
   studentId: string;
-  present: boolean;
+  status: 'Present' | 'Absent';
 }
 
 const ALLOWED_SUBJECTS = ['ME', 'MP', 'DBMS', 'DAA', 'FLAT'];
@@ -94,7 +94,7 @@ const MarkAttendance = () => {
     try {
       const records: AttendanceRecord[] = students.map(student => ({
         studentId: student._id,
-        present: attendance.get(student._id) || false
+        status: attendance.get(student._id) ? 'Present' : 'Absent'
       }));
 
       const response = await api.post('/attendance/mark', {

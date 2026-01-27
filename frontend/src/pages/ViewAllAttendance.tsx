@@ -36,9 +36,15 @@ const ViewAllAttendance = () => {
 
   const fetchAllAttendance = async () => {
     try {
+      console.log('Fetching all attendance...');
       const response = await api.get('/attendance/all');
-      setAttendanceData(response.data.data);
+      console.log('Attendance response:', response.data);
+      setAttendanceData(response.data.data || []);
+      if (!response.data.data || response.data.data.length === 0) {
+        console.warn('No attendance data received');
+      }
     } catch (err: any) {
+      console.error('Error fetching attendance:', err);
       setError(err.response?.data?.message || 'Failed to fetch attendance records');
     } finally {
       setLoading(false);
@@ -92,9 +98,9 @@ const ViewAllAttendance = () => {
     
     if (selectedSubject === 'all') return matchesSearch;
     
-    // Filter by subject if selected
-    const subjectData = student[selectedSubject as keyof StudentAttendanceData] as SubjectAttendance;
-    return matchesSearch && subjectData.total > 0;
+    // When a specific subject is selected, still show the student but highlight the subject
+    // This way students appear even if they have no attendance for that subject
+    return matchesSearch;
   });
 
   const getStatusClass = (status: string) => {
@@ -105,6 +111,8 @@ const ViewAllAttendance = () => {
         return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
       case 'Detained':
         return 'bg-red-500/20 text-red-400 border-red-500/50';
+      case 'N/A':
+        return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
     }
@@ -156,6 +164,17 @@ const ViewAllAttendance = () => {
                 </select>
               </div>
             </div>
+            
+            {/* Debug Info */}
+            {attendanceData.length > 0 && (
+              <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <p className="text-xs text-blue-400">
+                  📊 Loaded {attendanceData.length} students | Showing {filteredData.length} after filters
+                  {searchTerm && ` | Search: "${searchTerm}"`}
+                  {selectedSubject !== 'all' && ` | Subject: ${selectedSubject}`}
+                </p>
+              </div>
+            )}
           </GlassCard>
 
           {loading ? (
@@ -165,7 +184,19 @@ const ViewAllAttendance = () => {
           ) : error ? (
             <GlassCard className="p-8">
               <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg">
-                {error}
+                <p className="font-semibold mb-2">Error Loading Attendance</p>
+                <p>{error}</p>
+                <p className="text-xs mt-2 text-red-300">Check browser console (F12) for details</p>
+              </div>
+            </GlassCard>
+          ) : attendanceData.length === 0 ? (
+            <GlassCard className="p-8 text-center">
+              <div className="text-white/60 space-y-4">
+                <p className="text-xl">📋 No Students Found</p>
+                <p>No students are registered in the system yet.</p>
+                <p className="text-sm">
+                  To add students, run: <code className="bg-white/10 px-2 py-1 rounded">node backend/scripts/importStudents.js</code>
+                </p>
               </div>
             </GlassCard>
           ) : (
@@ -248,7 +279,9 @@ const ViewAllAttendance = () => {
                     ) : (
                       <tr>
                         <td colSpan={12} className="text-center text-white/60 py-8">
-                          No attendance records found
+                          {searchTerm || selectedSubject !== 'all' 
+                            ? 'No students match your search criteria'
+                            : 'No attendance records found. Mark attendance to see data here.'}
                         </td>
                       </tr>
                     )}

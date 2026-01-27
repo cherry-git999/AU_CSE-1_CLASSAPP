@@ -7,7 +7,8 @@ const Sidebar = () => {
 
   const baseMenuItems = [
     { name: 'Dashboard', path: isStudent ? '/student/dashboard' : '/admin/dashboard', icon: '📊' },
-    { name: 'Students', path: isStudent ? '/student/students' : '/admin/students', icon: '👥' },
+    // Only show the Students list to non-student users
+    ...(!isStudent ? [{ name: 'Students', path: '/admin/students', icon: '👥' }] : []),
     { name: isStudent ? 'Attendance' : 'Mark Attendance', path: isStudent ? '/student/attendance' : '/admin/attendance', icon: '📝' },
     ...(!isStudent ? [{ name: 'View All Attendance', path: '/admin/attendance/view', icon: '📋' }] : []),
     { name: 'Leave Requests', path: isStudent ? '/student/leaves' : '/admin/leaves', icon: '📄' },
