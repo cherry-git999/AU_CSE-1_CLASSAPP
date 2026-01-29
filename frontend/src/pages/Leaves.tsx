@@ -24,7 +24,6 @@ const Leaves = () => {
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     regNo: '',
-    dob: '',
     startDate: '',
     endDate: '',
     reason: ''
@@ -40,14 +39,13 @@ const Leaves = () => {
     // Pre-fill form if student is logged in
     if (isStudent && studentData) {
       console.log('Pre-filling form with student data:', studentData);
-      const dobValue = studentData.dob || '';
+      
       setFormData(prev => ({
         ...prev,
-        regNo: studentData.regNo || '',
-        dob: dobValue
+        regNo: studentData.regNo || ''
       }));
     }
-  }, [isStudent, studentData?.regNo, studentData?.dob]);
+  }, [isStudent, studentData?.regNo]);
 
   const fetchLeaves = async () => {
     try {
@@ -55,8 +53,8 @@ const Leaves = () => {
       
       if (isStudent && studentData?.regNo && studentData?.dob) {
         // Student: fetch only their own leaves
-        const dob = new Date(studentData.dob).toISOString().split('T')[0];
-        response = await api.get(`/leaves?regNo=${studentData.regNo}&dob=${dob}`);
+        // DOB is already in YYYY-MM-DD format
+        response = await api.get(`/leaves?regNo=${studentData.regNo}&dob=${studentData.dob}`);
       } else {
         // CR: fetch all leaves
         response = await api.get('/leaves');
@@ -74,11 +72,15 @@ const Leaves = () => {
     try {
       await api.put(`/leaves/${id}`, { status });
 
+      // Update the local state
       setLeaves(
         leaves.map((leave) =>
-          leave._id === id ? { ...leave, status } : leave
+          leave._id === id ? { ...leave, status, reviewedAt: new Date().toISOString() } : leave
         )
       );
+      
+      // Show success message
+      alert(`Leave request ${status.toLowerCase()} successfully!`);
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to update leave status');
     }
@@ -88,7 +90,11 @@ const Leaves = () => {
     e.preventDefault();
     setError('');
 
-    if (!formData.regNo || !formData.dob || !formData.startDate || !formData.endDate || !formData.reason) {
+    console.log('=== LEAVE REQUEST SUBMISSION DEBUG ===');
+    console.log('Form Data:', formData);
+    console.log('Student Data from localStorage:', studentData);
+
+    if (!formData.regNo || !formData.startDate || !formData.endDate || !formData.reason) {
       setError('All fields are required');
       return;
     }
@@ -101,12 +107,23 @@ const Leaves = () => {
     setSubmitting(true);
 
     try {
-      await api.post('/leaves', formData);
+      // Format the dates properly before sending
+      const submitData = {
+        regNo: formData.regNo.trim(),
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        reason: formData.reason.trim()
+      };
+
+      console.log('Submitting leave request:', submitData);
+
+      const response = await api.post('/leaves', submitData);
+      
+      console.log('Leave request submitted successfully:', response.data);
 
       // Reset form
       setFormData({
         regNo: isStudent && studentData ? studentData.regNo : '',
-        dob: isStudent && studentData ? new Date(studentData.dob).toISOString().split('T')[0] : '',
         startDate: '',
         endDate: '',
         reason: ''
@@ -119,7 +136,24 @@ const Leaves = () => {
       
       alert('Leave request submitted successfully!');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to submit leave request');
+      console.error('=== LEAVE SUBMISSION ERROR ===');
+      console.error('Full error:', err);
+      console.error('Response data:', err.response?.data);
+      console.error('Response status:', err.response?.status);
+      console.error('Error message:', err.message);
+      
+      let errorMessage = 'Failed to submit leave request';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = `Error: ${err.message}`;
+      }
+      
+      setError(errorMessage);
+      alert(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -189,20 +223,6 @@ const Leaves = () => {
                         value={formData.regNo}
                         onChange={(e) => setFormData({ ...formData, regNo: e.target.value })}
                         placeholder="e.g., URK21CS1001"
-                        className="w-full"
-                        disabled={isStudent}
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-white/80 mb-2 font-medium">
-                        Date of Birth *
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.dob}
-                        onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
                         className="w-full"
                         disabled={isStudent}
                         required

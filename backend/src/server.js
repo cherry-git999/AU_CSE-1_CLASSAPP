@@ -20,6 +20,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Request logger
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+
 // MongoDB Connection
 mongoose.connect(MONGODB_URI)
   .then(() => console.log('MongoDB connected successfully'))

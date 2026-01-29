@@ -50,14 +50,6 @@ leaveRequestSchema.index({ studentId: 1 });
 leaveRequestSchema.index({ status: 1 });
 leaveRequestSchema.index({ createdAt: -1 });
 
-// Validate that endDate is after startDate
-leaveRequestSchema.pre('save', function(next) {
-  if (this.endDate < this.startDate) {
-    next(new Error('End date must be after start date'));
-  }
-  next();
-});
-
 const LeaveRequest = mongoose.model('LeaveRequest', leaveRequestSchema);
 
 export default LeaveRequest;
