@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Internal documentation - DO NOT TRACK
+frontend/docs/*.md
+backend/docs/*.md
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
