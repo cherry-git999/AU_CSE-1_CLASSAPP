@@ -73,8 +73,10 @@ input, select, textarea {
   color: white;
   border-radius: 0.75rem;
   padding: 0.875rem 1.125rem;
+  font-size: 16px;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  -webkit-text-size-adjust: 100%;
 }
 
 input:focus, select:focus, textarea:focus {

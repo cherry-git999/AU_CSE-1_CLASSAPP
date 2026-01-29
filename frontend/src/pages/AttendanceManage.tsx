@@ -18,10 +18,6 @@ interface AttendanceData {
   status: 'Eligible' | 'Condonation' | 'Detained';
 }
 
-interface StudentWithAttendance extends Student {
-  attendance: AttendanceData[];
-}
-
 const AttendanceManage = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>('');
