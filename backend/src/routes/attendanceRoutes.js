@@ -1,5 +1,13 @@
 import express from 'express';
-import { lookupAttendance, markAttendance, getAllAttendance, getAttendanceByDate } from '../controllers/attendanceController.js';
+import { 
+  lookupAttendance, 
+  markAttendance, 
+  getAllAttendance, 
+  getAttendanceByDate,
+  getAttendanceSummary,
+  exportAttendanceCSV,
+  resetAttendance
+} from '../controllers/attendanceController.js';
 import { protectCR } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -25,6 +33,30 @@ router.get('/all', protectCR, getAllAttendance);
  * @query   date (required, YYYY-MM-DD), subject (optional, ME/MP/DBMS/DAA/FLAT)
  */
 router.get('/by-date', protectCR, getAttendanceByDate);
+
+/**
+ * @route   GET /api/attendance/summary
+ * @desc    Get aggregated attendance summary by date range (CR only)
+ * @access  CR only (JWT protected)
+ * @query   fromDate (required, YYYY-MM-DD), toDate (required, YYYY-MM-DD), subject (required, specific or "ALL")
+ */
+router.get('/summary', protectCR, getAttendanceSummary);
+
+/**
+ * @route   GET /api/attendance/export
+ * @desc    Export attendance as CSV file (CR only)
+ * @access  CR only (JWT protected)
+ * @query   fromDate (required), toDate (required), subject (required), format=csv
+ */
+router.get('/export', protectCR, exportAttendanceCSV);
+
+/**
+ * @route   DELETE /api/attendance/reset
+ * @desc    Reset all attendance data (testing only, CR only)
+ * @access  CR only (JWT protected)
+ * @warning Deletes all attendance and dailyattendances documents
+ */
+router.delete('/reset', protectCR, resetAttendance);
 
 /**
  * @route   POST /api/attendance/lookup
