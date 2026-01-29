@@ -31,3 +31,8 @@ backend/docs/*.md
 .env
 .env.local
 .env.*.local
+
+# Data files - Real student data (privacy/security)
+backend/data/students.csv
+backend/data/*.csv
+!backend/data/*.sample.csv
