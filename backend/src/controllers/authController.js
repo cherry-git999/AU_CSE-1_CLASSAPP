@@ -1,4 +1,3 @@
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 /**
@@ -28,17 +27,19 @@ export const loginCR = async (req, res) => {
       });
     }
 
+    // Normalize email (trim and lowercase)
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedCREmail = CR_EMAIL.trim().toLowerCase();
+
     // Compare email with environment variable
-    if (email !== CR_EMAIL) {
+    if (normalizedEmail !== normalizedCREmail) {
       return res.status(401).json({ 
         message: 'Invalid credentials' 
       });
     }
 
-    // Compare password using bcrypt
-    const isPasswordValid = await bcrypt.compare(password, CR_PASSWORD);
-    
-    if (!isPasswordValid) {
+    // Compare password - PLAIN TEXT (no bcrypt)
+    if (password !== CR_PASSWORD) {
       return res.status(401).json({ 
         message: 'Invalid credentials' 
       });

@@ -445,34 +445,27 @@ export const lookupAttendance = async (req, res) => {
       });
     }
 
-    // Validate date format
-    const dobDate = new Date(dob);
-    if (isNaN(dobDate.getTime())) {
-      return res.status(400).json({ 
-        message: 'Invalid date format. Use YYYY-MM-DD' 
-      });
-    }
+    // Normalize regNo
+    const normalizedRegNo = regNo.trim().toUpperCase();
 
-    // Find student by registration number
-    const student = await Student.findOne({ regNo: regNo.trim() });
+    // Find student ONLY by registration number
+    const student = await Student.findOne({ regNo: normalizedRegNo });
 
     if (!student) {
       return res.status(401).json({ 
-        message: 'Invalid registration number or date of birth' 
+        message: 'Invalid credentials' 
       });
     }
 
-    // Compare DOB (normalize to date only, ignore time)
-    const storedDOB = new Date(student.dob);
-    const providedDOB = new Date(dob);
-    
-    // Compare year, month, and day only
-    const storedDate = storedDOB.toISOString().split('T')[0];
-    const providedDate = providedDOB.toISOString().split('T')[0];
+    // Compare DOB as strings (YYYY-MM-DD format)
+    // Convert input DOB to YYYY-MM-DD
+    const inputDob = new Date(dob).toISOString().split('T')[0];
+    // Convert stored MongoDB DOB to YYYY-MM-DD
+    const storedDob = new Date(student.dob).toISOString().split('T')[0];
 
-    if (storedDate !== providedDate) {
+    if (inputDob !== storedDob) {
       return res.status(401).json({ 
-        message: 'Invalid registration number or date of birth' 
+        message: 'Invalid credentials' 
       });
     }
 
