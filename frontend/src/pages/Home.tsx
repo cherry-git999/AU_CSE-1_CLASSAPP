@@ -20,20 +20,6 @@ const Home = () => {
 
         <div className="grid md:grid-cols-2 gap-6">
           <GlassCard className="p-8 text-center group">
-            <div className="text-5xl mb-6 transform group-hover:scale-110 transition-transform">🔐</div>
-            <h2 className="text-2xl font-bold text-white mb-3">CR / LR Login</h2>
-            <p className="text-white/60 mb-6 leading-relaxed">
-              Access admin dashboard to manage attendance, leaves, and announcements
-            </p>
-            <Link
-              to="/admin/login"
-              className="btn-primary inline-block w-full"
-            >
-              Login as Admin
-            </Link>
-          </GlassCard>
-
-          <GlassCard className="p-8 text-center group">
             <div className="text-5xl mb-6 transform group-hover:scale-110 transition-transform">👨‍🎓</div>
             <h2 className="text-2xl font-bold text-white mb-3">Student Login</h2>
             <p className="text-white/60 mb-6 leading-relaxed">
@@ -44,6 +30,20 @@ const Home = () => {
               className="btn-secondary inline-block w-full"
             >
               Login as Student
+            </Link>
+          </GlassCard>
+
+          <GlassCard className="p-8 text-center group">
+            <div className="text-5xl mb-6 transform group-hover:scale-110 transition-transform">🔐</div>
+            <h2 className="text-2xl font-bold text-white mb-3">CR / LR Login</h2>
+            <p className="text-white/60 mb-6 leading-relaxed">
+              Access admin dashboard to manage attendance, leaves, and announcements
+            </p>
+            <Link
+              to="/admin/login"
+              className="btn-primary inline-block w-full"
+            >
+              Login as Admin
             </Link>
           </GlassCard>
         </div>

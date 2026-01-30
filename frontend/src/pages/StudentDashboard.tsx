@@ -178,14 +178,15 @@ const StudentDashboard = () => {
 
         // Update stats with real data
         setStats([
-          { 
-            label: 'Your Attendance', 
-            value: hasAttendanceData ? `${overallAttendance}%` : 'N/A', 
-            icon: '📊', 
-            gradient: overallAttendance >= 75 ? 'from-green-500 to-emerald-500' : 
-                     overallAttendance >= 65 ? 'from-orange-500 to-amber-500' : 
-                     'from-red-500 to-pink-500' 
-          },
+          // COMMENTED OUT - Attendance percentage not working dynamically
+          // { 
+          //   label: 'Your Attendance', 
+          //   value: hasAttendanceData ? `${overallAttendance}%` : 'N/A', 
+          //   icon: '📊', 
+          //   gradient: overallAttendance >= 75 ? 'from-green-500 to-emerald-500' : 
+          //            overallAttendance >= 65 ? 'from-orange-500 to-amber-500' : 
+          //            'from-red-500 to-pink-500' 
+          // },
           { 
             label: 'Total Students', 
             value: totalStudents, 

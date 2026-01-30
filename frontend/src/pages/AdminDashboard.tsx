@@ -103,20 +103,22 @@ const AdminDashboard = () => {
           icon: '👥', 
           gradient: 'from-blue-500 to-cyan-500' 
         },
-        { 
-          label: 'Average Attendance', 
-          value: `${avgAttendance}%`, 
-          icon: '📊', 
-          gradient: avgAttendance >= 75 ? 'from-green-500 to-emerald-500' : 
-                   avgAttendance >= 65 ? 'from-orange-500 to-amber-500' : 
-                   'from-red-500 to-pink-500' 
-        },
-        { 
-          label: 'Low Attendance', 
-          value: lowAttendance.length.toString(), 
-          icon: '⚠️', 
-          gradient: 'from-orange-500 to-amber-500' 
-        },
+        // COMMENTED OUT - Average Attendance not working dynamically
+        // { 
+        //   label: 'Average Attendance', 
+        //   value: `${avgAttendance}%`, 
+        //   icon: '📊', 
+        //   gradient: avgAttendance >= 75 ? 'from-green-500 to-emerald-500' : 
+        //            avgAttendance >= 65 ? 'from-orange-500 to-amber-500' : 
+        //            'from-red-500 to-pink-500' 
+        // },
+        // COMMENTED OUT - Low Attendance count not working dynamically
+        // { 
+        //   label: 'Low Attendance', 
+        //   value: lowAttendance.length.toString(), 
+        //   icon: '⚠️', 
+        //   gradient: 'from-orange-500 to-amber-500' 
+        // },
         { 
           label: 'Announcements', 
           value: announcementsCount.toString(), 
