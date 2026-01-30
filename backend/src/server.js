@@ -17,7 +17,13 @@ const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/classapp';
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://au-cse-1-classapp-ectf.vercel.app"
+  ],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -38,13 +44,6 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/leaves', leaveRoutes);
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://au-cse-1-classapp-ectf.vercel.app/"
-  ],
-  credentials: true
-}));
 
 
 // Health check

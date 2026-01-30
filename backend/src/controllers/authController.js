@@ -46,7 +46,7 @@ export const loginCR = async (req, res) => {
 
     // Generate JWT token with 8-hour expiry
     const token = jwt.sign(
-      { role: 'CR' },
+      { role: 'CR', email: CR_EMAIL },
       JWT_SECRET,
       { expiresIn: '8h' }
     );
@@ -54,7 +54,10 @@ export const loginCR = async (req, res) => {
     // Send response
     res.status(200).json({
       token,
-      role: 'CR'
+      user: {
+        email: CR_EMAIL,
+        role: 'CR'
+      }
     });
 
   } catch (error) {
