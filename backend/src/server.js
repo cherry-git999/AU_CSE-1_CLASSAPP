@@ -19,10 +19,14 @@ const MONGODB_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb
 // Middleware
 app.use(cors({
   origin: [
-     "http://localhost:5173",
-    "https://au-cse-1-classapp-ectf.vercel.app"
+    "http://localhost:5173",
+    "https://au-cse-1-classapp.vercel.app"
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 600 // Cache preflight for 10 minutes
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
