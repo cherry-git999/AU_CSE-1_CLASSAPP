@@ -19,8 +19,7 @@ const MONGODB_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb
 // Middleware
 app.use(cors({
   origin: [
-    "http://localhost:5173",
-    "https://au-cse-1-classapp-ectf.vercel.app"
+    "*",
   ],
   credentials: true
 }));
