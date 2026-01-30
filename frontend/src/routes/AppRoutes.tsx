@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRoute from '../auth/PrivateRoute';
 import StudentPrivateRoute from '../auth/StudentPrivateRoute';
 import Navbar from '../components/Navbar';
+import Layout from '../components/Layout';
 import Home from '../pages/Home';
 import AdminLogin from '../pages/AdminLogin';
 import StudentLogin from '../pages/StudentLogin';
@@ -18,7 +19,8 @@ import Announcements from '../pages/Announcements';
 const AppRoutes = () => {
   return (
     <BrowserRouter>
-      <Routes>
+      <Layout>
+        <Routes>
         {/* Public Routes */}
         <Route path="/" element={<><Navbar /><Home /></>} />
         <Route path="/admin/login" element={<><Navbar /><AdminLogin /></>} />
@@ -140,6 +142,7 @@ const AppRoutes = () => {
         {/* Redirect unknown routes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Layout>
     </BrowserRouter>
   );
 };

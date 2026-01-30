@@ -27,6 +27,12 @@ body {
   background-attachment: fixed;
 }
 
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Glass Card Styles */
 .glass-card {
   background: rgba(255, 255, 255, 0.03);
@@ -287,3 +293,25 @@ tr:hover {
 .hover\\:scale-105:hover {
   transform: scale(1.05);
 }
+
+/* Footer Styles */
+footer {
+  margin-top: auto;
+  position: relative;
+  z-index: 10;
+}
+
+footer p {
+  transition: all 0.3s ease;
+}
+
+footer p:hover {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 640px) {
+  footer p {
+    font-size: 0.8125rem;
+  }
+}
+

@@ -35,79 +35,179 @@ const StudentDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch student's attendance data
+      // Fetch student's data from localStorage
       const studentData = JSON.parse(localStorage.getItem('student') || '{}');
       let overallAttendance = 0;
+      let hasAttendanceData = false;
       let totalLeaves = 0;
+      let attendanceData: AttendanceRecord[] = [];
 
-      if (studentData.attendance && Array.isArray(studentData.attendance)) {
-        // Calculate overall attendance percentage
-        let totalAttended = 0;
-        let totalClasses = 0;
-        
-        studentData.attendance.forEach((record: any) => {
-          totalAttended += record.attended || 0;
-          totalClasses += record.total || 0;
+      console.log('Fetching dashboard data for:', studentData.regNo);
+
+      // Fetch real-time attendance data from database via API
+      if (studentData.regNo && studentData.dob) {
+        try {
+          console.log('Fetching attendance from database...');
+          const attendanceResponse = await api.post('/attendance/lookup', {
+            regNo: studentData.regNo,
+            dob: studentData.dob
+          });
+
+          console.log('Full Attendance API response:', JSON.stringify(attendanceResponse.data, null, 2));
+          console.log('Attendance API response:', attendanceResponse.data);
+          console.log('Attendance field:', attendanceResponse.data.attendance);
+          console.log('Attendance array:', attendanceResponse.data.attendance);
+          console.log('Is array?', Array.isArray(attendanceResponse.data.attendance));
+
+          // The API might return attendance in different fields
+          const attendanceArray = attendanceResponse.data.attendance || 
+                                  attendanceResponse.data.overallAttendance || 
+                                  [];
           
-          // Count leaves (absent days)
-          totalLeaves += (record.total || 0) - (record.attended || 0);
-        });
+          console.log('Using attendance array:', attendanceArray);
 
-        if (totalClasses > 0) {
-          overallAttendance = Math.round((totalAttended / totalClasses) * 100);
+          if (attendanceArray && Array.isArray(attendanceArray)) {
+            attendanceData = attendanceArray;
+            console.log('Attendance data length:', attendanceData.length);
+            
+            // If attendance array has records (even if empty), we have data
+            if (attendanceData.length > 0) {
+              hasAttendanceData = true;
+              
+              // Calculate overall attendance percentage from all subjects in DB
+              // This aggregates attended/total across all subjects to get overall %
+              let totalAttended = 0;
+              let totalClasses = 0;
+              
+              attendanceData.forEach((record: any) => {
+                console.log('Processing record:', record);
+                totalAttended += record.attended || 0;
+                totalClasses += record.total || 0;
+              });
+
+              console.log('Total calculation:', { totalAttended, totalClasses });
+
+              if (totalClasses > 0) {
+                overallAttendance = Math.round((totalAttended / totalClasses) * 100);
+                console.log('Calculated attendance=' + overallAttendance + '%');
+              } else {
+                // Has records but no classes conducted yet
+                overallAttendance = 0;
+                console.log('Has attendance records but totalClasses=0, showing 0%');
+              }
+
+              console.log('Overall attendance from DB:', `${totalAttended}/${totalClasses} = ${overallAttendance}%`);
+
+              // Set subject-wise attendance with dynamic data from DB
+              setSubjectAttendance(attendanceData);
+            } else {
+              console.log('Attendance array is empty - no records found in database for this student');
+            }
+          } else {
+            console.log('No attendance data in response or not an array');
+          }
+        } catch (attendanceError: any) {
+          console.error('Error fetching attendance:', attendanceError);
+          console.error('Error details:', attendanceError.response?.data);
+          // Fallback to localStorage data if API call fails
+          if (studentData.attendance && Array.isArray(studentData.attendance)) {
+            console.log('Using fallback localStorage data');
+            attendanceData = studentData.attendance;
+            
+            let totalAttended = 0;
+            let totalClasses = 0;
+            
+            attendanceData.forEach((record: any) => {
+              totalAttended += record.attended || 0;
+              totalClasses += record.total || 0;
+            });
+
+            if (totalClasses > 0) {
+              hasAttendanceData = true;
+              overallAttendance = Math.round((totalAttended / totalClasses) * 100);
+            }
+
+            setSubjectAttendance(attendanceData);
+          }
         }
 
-        // Set subject-wise attendance
-        setSubjectAttendance(studentData.attendance);
+        // Fetch student's actual leave requests from database via API
+        // This shows the count of leave applications submitted by the student
+        try {
+          console.log('Fetching leave requests from database...');
+          const leavesResponse = await api.get('/leaves', {
+            params: {
+              regNo: studentData.regNo,
+              dob: studentData.dob
+            }
+          });
+
+          console.log('Leave requests from DB:', leavesResponse.data);
+          totalLeaves = leavesResponse.data.count || 0;
+        } catch (leavesError: any) {
+          console.error('Error fetching leaves:', leavesError);
+          console.error('Error details:', leavesError.response?.data);
+          // Fallback to 0 if API call fails
+          totalLeaves = 0;
+        }
       }
 
-      // Fetch announcements
-      const announcementsResponse = await api.get('/announcements');
-      const allAnnouncements = announcementsResponse.data.announcements || [];
-      const announcementsCount = allAnnouncements.length || 0;
-      
-      // Get recent 3 announcements
-      setRecentAnnouncements(allAnnouncements.slice(0, 3));
-
-      // Fetch total students count (public endpoint)
-      let totalStudents = 'N/A';
+      // Fetch announcements dynamically
       try {
-        const studentsResponse = await api.get('/students/count');
-        totalStudents = studentsResponse.data.count?.toString() || 'N/A';
-      } catch (err) {
-        console.error('Error fetching student count:', err);
-        totalStudents = 'N/A';
-      }
+        console.log('Fetching announcements from API...');
+        const announcementsResponse = await api.get('/announcements');
+        console.log('Announcements API response:', announcementsResponse.data);
+        
+        const allAnnouncements = announcementsResponse.data.announcements || [];
+        const announcementsCount = allAnnouncements.length || 0;
+        
+        // Get recent 3 announcements
+        setRecentAnnouncements(allAnnouncements.slice(0, 3));
 
-      // Update stats with real data
-      setStats([
-        { 
-          label: 'Your Attendance', 
-          value: `${overallAttendance}%`, 
-          icon: '📊', 
-          gradient: overallAttendance >= 75 ? 'from-green-500 to-emerald-500' : 
-                   overallAttendance >= 65 ? 'from-orange-500 to-amber-500' : 
-                   'from-red-500 to-pink-500' 
-        },
-        { 
-          label: 'Total Students', 
-          value: totalStudents, 
-          icon: '👥', 
-          gradient: 'from-blue-500 to-cyan-500' 
-        },
-        { 
-          label: 'Your Leaves', 
-          value: totalLeaves.toString(), 
-          icon: '📋', 
-          gradient: 'from-orange-500 to-amber-500' 
-        },
-        { 
-          label: 'Announcements', 
-          value: announcementsCount.toString(), 
-          icon: '📢', 
-          gradient: 'from-purple-500 to-pink-500' 
-        },
-      ]);
+        // Fetch total students count (public endpoint)
+        let totalStudents = 'N/A';
+        try {
+          const studentsResponse = await api.get('/students/count');
+          totalStudents = studentsResponse.data.count?.toString() || 'N/A';
+        } catch (err) {
+          console.error('Error fetching student count:', err);
+          totalStudents = 'N/A';
+        }
+
+        console.log('Updating stats with:', { overallAttendance, hasAttendanceData, totalStudents, totalLeaves, announcementsCount });
+
+        // Update stats with real data
+        setStats([
+          { 
+            label: 'Your Attendance', 
+            value: hasAttendanceData ? `${overallAttendance}%` : 'N/A', 
+            icon: '📊', 
+            gradient: overallAttendance >= 75 ? 'from-green-500 to-emerald-500' : 
+                     overallAttendance >= 65 ? 'from-orange-500 to-amber-500' : 
+                     'from-red-500 to-pink-500' 
+          },
+          { 
+            label: 'Total Students', 
+            value: totalStudents, 
+            icon: '👥', 
+            gradient: 'from-blue-500 to-cyan-500' 
+          },
+          { 
+            label: 'Your Leaves', 
+            value: totalLeaves.toString(), 
+            icon: '📋', 
+            gradient: 'from-orange-500 to-amber-500' 
+          },
+          { 
+            label: 'Announcements', 
+            value: announcementsCount.toString(), 
+            icon: '📢', 
+            gradient: 'from-purple-500 to-pink-500' 
+          },
+        ]);
+      } catch (announcementsError) {
+        console.error('Error fetching announcements:', announcementsError);
+      }
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);

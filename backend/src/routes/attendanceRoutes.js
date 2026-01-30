@@ -1,7 +1,9 @@
 import express from 'express';
 import { 
   lookupAttendance, 
-  markAttendance, 
+  markAttendance,
+  updateAttendance,
+  getAttendanceForEdit,
   getAllAttendance, 
   getAttendanceByDate,
   getAttendanceSummary,
@@ -18,6 +20,21 @@ const router = express.Router();
  * @access  CR only (JWT protected)
  */
 router.post('/mark', protectCR, markAttendance);
+
+/**
+ * @route   PUT /api/attendance/update
+ * @desc    Update existing attendance for a subject (CR only)
+ * @access  CR only (JWT protected)
+ */
+router.put('/update', protectCR, updateAttendance);
+
+/**
+ * @route   GET /api/attendance/for-edit
+ * @desc    Get attendance for a specific date and subject to edit (CR only)
+ * @access  CR only (JWT protected)
+ * @query   date (required, YYYY-MM-DD), subject (required, ME/MP/DBMS/DAA/FLAT)
+ */
+router.get('/for-edit', protectCR, getAttendanceForEdit);
 
 /**
  * @route   GET /api/attendance/all

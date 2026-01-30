@@ -45,10 +45,26 @@ export const markAttendance = async (req, res) => {
     }
 
     // Check if attendance already exists for this date + subject
-    const existingAttendance = await DailyAttendance.findOne({ date, subject });
+    const existingAttendance = await DailyAttendance.findOne({ date, subject })
+      .populate('records.studentId', 'name regNo');
+    
     if (existingAttendance) {
-      return res.status(400).json({ 
-        message: `Attendance already marked for ${subject} on ${date}` 
+      // Return existing attendance data for edit mode
+      const records = existingAttendance.records.map(record => ({
+        studentId: record.studentId._id,
+        name: record.studentId.name,
+        regNo: record.studentId.regNo,
+        status: record.status
+      }));
+
+      return res.status(409).json({ 
+        message: `Attendance already marked for ${subject} on ${date}`,
+        alreadyMarked: true,
+        date,
+        subject,
+        records,
+        markedBy: existingAttendance.markedBy,
+        markedAt: existingAttendance.createdAt
       });
     }
 
@@ -154,6 +170,260 @@ export const markAttendance = async (req, res) => {
     console.error('Attendance marking error:', error);
     res.status(500).json({ 
       message: 'Server error during attendance marking' 
+    });
+  }
+};
+
+/**
+ * Update Existing Attendance Controller
+ * Updates attendance for a specific subject and date that was already marked
+ * Access: CR only (JWT protected)
+ */
+export const updateAttendance = async (req, res) => {
+  try {
+    const { subject, date, records } = req.body;
+
+    // Validate request body
+    if (!subject || !date || !records || !Array.isArray(records)) {
+      return res.status(400).json({ 
+        message: 'Subject, date, and records array are required' 
+      });
+    }
+
+    // Validate subject against allowed list
+    if (!ALLOWED_SUBJECTS.includes(subject)) {
+      return res.status(400).json({ 
+        message: `Invalid subject. Allowed subjects: ${ALLOWED_SUBJECTS.join(', ')}` 
+      });
+    }
+
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      return res.status(400).json({ 
+        message: 'Invalid date format. Use YYYY-MM-DD' 
+      });
+    }
+
+    // Validate records array
+    if (records.length === 0) {
+      return res.status(400).json({ 
+        message: 'Records array cannot be empty' 
+      });
+    }
+
+    // Check if attendance exists for this date + subject
+    const existingDailyAttendance = await DailyAttendance.findOne({ date, subject });
+    if (!existingDailyAttendance) {
+      return res.status(404).json({ 
+        message: `No attendance found for ${subject} on ${date}. Please mark attendance first.` 
+      });
+    }
+
+    // Create a map of old records for comparison
+    const oldRecordsMap = new Map();
+    existingDailyAttendance.records.forEach(record => {
+      oldRecordsMap.set(record.studentId.toString(), record.status);
+    });
+
+    // Process each student record
+    const dailyRecords = [];
+    const results = [];
+    const errors = [];
+    const changedRecords = [];
+
+    for (const record of records) {
+      try {
+        const { studentId, status } = record;
+
+        if (!studentId) {
+          errors.push({ studentId: 'unknown', error: 'Student ID is required' });
+          continue;
+        }
+
+        if (!status || !['Present', 'Absent'].includes(status)) {
+          errors.push({ studentId, error: 'Status must be "Present" or "Absent"' });
+          continue;
+        }
+
+        // Verify student exists
+        const student = await Student.findById(studentId);
+        if (!student) {
+          errors.push({ studentId, error: 'Student not found' });
+          continue;
+        }
+
+        // Add to daily records
+        dailyRecords.push({
+          studentId,
+          status
+        });
+
+        // Check if status changed
+        const oldStatus = oldRecordsMap.get(studentId.toString());
+        const statusChanged = oldStatus !== status;
+
+        if (statusChanged) {
+          changedRecords.push({
+            studentId,
+            regNo: student.regNo,
+            name: student.name,
+            oldStatus,
+            newStatus: status
+          });
+
+          // Find and update attendance summary for this student and subject
+          let attendanceRecord = await Attendance.findOne({ 
+            studentId, 
+            subject 
+          });
+
+          if (!attendanceRecord) {
+            // This shouldn't happen, but handle it gracefully
+            attendanceRecord = new Attendance({
+              studentId,
+              subject,
+              attended: status === 'Present' ? 1 : 0,
+              total: 1
+            });
+          } else {
+            // Update the record based on status change
+            if (oldStatus === 'Present' && status === 'Absent') {
+              // Changed from Present to Absent - decrease attended
+              attendanceRecord.attended = Math.max(0, attendanceRecord.attended - 1);
+            } else if (oldStatus === 'Absent' && status === 'Present') {
+              // Changed from Absent to Present - increase attended
+              attendanceRecord.attended += 1;
+            }
+          }
+
+          // Save (pre-save hook will calculate percentage and status)
+          await attendanceRecord.save();
+
+          results.push({
+            studentId,
+            regNo: student.regNo,
+            name: student.name,
+            subject,
+            attended: attendanceRecord.attended,
+            total: attendanceRecord.total,
+            percentage: attendanceRecord.percentage,
+            status: attendanceRecord.status,
+            changed: true
+          });
+        } else {
+          // No change, but include in results
+          const attendanceRecord = await Attendance.findOne({ studentId, subject });
+          results.push({
+            studentId,
+            regNo: student.regNo,
+            name: student.name,
+            subject,
+            attended: attendanceRecord?.attended || 0,
+            total: attendanceRecord?.total || 0,
+            percentage: attendanceRecord?.percentage || 0,
+            status: attendanceRecord?.status || 'N/A',
+            changed: false
+          });
+        }
+
+      } catch (error) {
+        console.error(`Error processing student ${record.studentId}:`, error);
+        errors.push({ 
+          studentId: record.studentId, 
+          error: 'Failed to update attendance' 
+        });
+      }
+    }
+
+    // Update DailyAttendance document
+    existingDailyAttendance.records = dailyRecords;
+    await existingDailyAttendance.save();
+
+    // Send response
+    res.status(200).json({
+      message: 'Attendance updated successfully',
+      subject,
+      date,
+      processed: results.length,
+      changed: changedRecords.length,
+      errors: errors.length,
+      results,
+      changedRecords,
+      failedRecords: errors
+    });
+
+  } catch (error) {
+    console.error('Attendance update error:', error);
+    res.status(500).json({ 
+      message: 'Server error during attendance update' 
+    });
+  }
+};
+
+/**
+ * Get Attendance for Specific Date and Subject
+ * Returns attendance records if already marked
+ * Access: CR only (JWT protected)
+ */
+export const getAttendanceForEdit = async (req, res) => {
+  try {
+    const { date, subject } = req.query;
+
+    // Validate query parameters
+    if (!date || !subject) {
+      return res.status(400).json({ 
+        message: 'Date and subject are required' 
+      });
+    }
+
+    // Validate subject against allowed list
+    if (!ALLOWED_SUBJECTS.includes(subject)) {
+      return res.status(400).json({ 
+        message: `Invalid subject. Allowed subjects: ${ALLOWED_SUBJECTS.join(', ')}` 
+      });
+    }
+
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      return res.status(400).json({ 
+        message: 'Invalid date format. Use YYYY-MM-DD' 
+      });
+    }
+
+    // Find existing attendance
+    const existingAttendance = await DailyAttendance.findOne({ date, subject })
+      .populate('records.studentId', 'name regNo');
+
+    if (!existingAttendance) {
+      return res.status(404).json({ 
+        message: 'No attendance found for this date and subject',
+        alreadyMarked: false
+      });
+    }
+
+    // Format the response
+    const records = existingAttendance.records.map(record => ({
+      studentId: record.studentId._id,
+      name: record.studentId.name,
+      regNo: record.studentId.regNo,
+      status: record.status
+    }));
+
+    res.status(200).json({
+      alreadyMarked: true,
+      date,
+      subject,
+      records,
+      markedBy: existingAttendance.markedBy,
+      markedAt: existingAttendance.createdAt
+    });
+
+  } catch (error) {
+    console.error('Get attendance for edit error:', error);
+    res.status(500).json({ 
+      message: 'Server error while fetching attendance' 
     });
   }
 };
