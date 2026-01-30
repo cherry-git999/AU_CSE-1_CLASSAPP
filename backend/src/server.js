@@ -8,6 +8,7 @@ import announcementRoutes from './routes/announcementRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
 import leaveRoutes from './routes/leaveRoutes.js';
 
+
 // Load environment variables
 dotenv.config();
 
@@ -37,6 +38,14 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/leaves', leaveRoutes);
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://your-frontend.vercel.app"
+  ],
+  credentials: true
+}));
+
 
 // Health check
 app.get('/', (req, res) => {
@@ -50,3 +59,5 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+

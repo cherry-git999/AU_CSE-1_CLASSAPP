@@ -80,10 +80,6 @@ const AdminDashboard = () => {
         }
       });
 
-      const avgAttendance = studentsWithAttendance > 0 
-        ? Math.round(totalAttendanceSum / studentsWithAttendance) 
-        : 0;
-
       // Fetch announcements
       const announcementsResponse = await api.get('/announcements');
       const allAnnouncements = announcementsResponse.data.announcements || [];
