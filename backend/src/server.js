@@ -41,7 +41,7 @@ app.use('/api/leaves', leaveRoutes);
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://your-frontend.vercel.app"
+    "https://au-cse-1-classapp-ectf.vercel.app/"
   ],
   credentials: true
 }));
