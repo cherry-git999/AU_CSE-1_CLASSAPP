@@ -20,7 +20,8 @@ const MONGODB_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://cse1class.app/",
+    "https://cse1class.app",
+    "https://www.cse1class.app"
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
