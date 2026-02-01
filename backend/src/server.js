@@ -21,7 +21,6 @@ app.use(cors({
   origin: [
     "http://localhost:5173",
     "https://cse1class.app/",
-    "https://www.cse1class.app" 
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
