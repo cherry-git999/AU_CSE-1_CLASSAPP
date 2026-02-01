@@ -190,7 +190,7 @@ const MarkAttendance = () => {
           records
         });
 
-        setSuccessMessage(`Attendance submitted successfully! Processed: ${response.data.processed} students`);
+        setSuccessMessage(`Attendance submitted successfully!`); // Processed: ${response.data.processed} students
         setShowSuccessModal(true);
         
         // Now it's marked, switch to read-only mode

@@ -22,6 +22,8 @@ const Leaves = () => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [formData, setFormData] = useState({
     regNo: '',
     startDate: '',
@@ -159,6 +161,31 @@ const Leaves = () => {
     }
   };
 
+  const resetAllLeaves = async () => {
+    setResetting(true);
+    
+    try {
+      const response = await api.delete('/leaves/reset');
+      
+      console.log('Reset response:', response.data);
+      
+      // Clear local data
+      setLeaves([]);
+      setError('');
+      
+      // Show success message
+      alert(`✅ ${response.data.message}\n\nDeleted: ${response.data.deleted} leave requests`);
+      
+      // Close confirmation dialog
+      setShowResetConfirm(false);
+    } catch (err: any) {
+      console.error('Error resetting leaves:', err);
+      alert('❌ Failed to reset leave data: ' + (err.response?.data?.message || 'Server error'));
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const getStatusClass = (status: string) => {
     switch (status) {
       case 'Approved':
@@ -185,15 +212,69 @@ const Leaves = () => {
                 {isStudent ? 'View your leave requests and apply for new ones' : 'Manage student leave requests'}
               </p>
             </div>
-            {isStudent && (
-              <button
-                onClick={() => setShowModal(true)}
-                className="btn-primary"
-              >
-                + Apply for Leave
-              </button>
-            )}
+            <div className="flex gap-3">
+              {!isStudent && (
+                <button
+                  onClick={() => setShowResetConfirm(true)}
+                  disabled={resetting}
+                  className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 px-4 py-2 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <span>{resetting ? '⏳' : '🗑️'}</span>
+                  {resetting ? 'Resetting...' : 'Reset All Data'}
+                </button>
+              )}
+              {isStudent && (
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="btn-primary"
+                >
+                  + Apply for Leave
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Reset Confirmation Modal */}
+          {showResetConfirm && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <GlassCard className="max-w-md w-full p-6 space-y-4">
+                <div className="text-center">
+                  <div className="text-5xl mb-4">⚠️</div>
+                  <h2 className="text-2xl font-bold text-red-400 mb-2">Reset All Leave Requests?</h2>
+                  <p className="text-white/80 mb-4">
+                    This will permanently delete ALL leave request data:
+                  </p>
+                  <ul className="text-left text-white/70 space-y-2 mb-4 bg-red-500/10 p-4 rounded-lg border border-red-500/30">
+                    <li>• All pending leave requests</li>
+                    <li>• All approved leave requests</li>
+                    <li>• All rejected leave requests</li>
+                  </ul>
+                  <p className="text-yellow-400 font-semibold mb-2">
+                    ✅ Students will NOT be deleted
+                  </p>
+                  <p className="text-red-400 font-bold text-lg">
+                    This action CANNOT be undone!
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowResetConfirm(false)}
+                    disabled={resetting}
+                    className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-4 py-2 rounded-lg font-semibold transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={resetAllLeaves}
+                    disabled={resetting}
+                    className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 px-4 py-2 rounded-lg font-semibold transition-all disabled:opacity-50"
+                  >
+                    {resetting ? 'Deleting...' : 'Yes, Delete All'}
+                  </button>
+                </div>
+              </GlassCard>
+            </div>
+          )}
 
           {/* Leave Application Modal */}
           {showModal && (

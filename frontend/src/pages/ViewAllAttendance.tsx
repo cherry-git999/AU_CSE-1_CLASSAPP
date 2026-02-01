@@ -187,14 +187,14 @@ const ViewAllAttendance = () => {
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-gold">View All Attendance</h1>
             <div className="flex gap-3">
-              { <button
+              {/* <button
                 onClick={() => setShowResetConfirm(true)}
                 disabled={resetting}
                 className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 px-4 py-2 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <span>{resetting ? '⏳' : '🗑️'}</span>
                 {resetting ? 'Resetting...' : 'Reset All Data'}
-              </button> }
+              </button> */}
               <button
                 onClick={exportToCSV}
                 disabled={loading || exporting || attendanceData.length === 0}
