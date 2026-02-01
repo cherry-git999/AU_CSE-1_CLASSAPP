@@ -1,5 +1,5 @@
 import express from 'express';
-import { createLeaveRequest, getLeaveRequests, updateLeaveStatus, deleteLeaveRequest } from '../controllers/leaveController.js';
+import { createLeaveRequest, getLeaveRequests, updateLeaveStatus, deleteLeaveRequest, resetAllLeaves } from '../controllers/leaveController.js';
 import { protectCR } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -24,6 +24,13 @@ router.get('/', getLeaveRequests);
  * @access  CR only (JWT protected)
  */
 router.put('/:id', protectCR, updateLeaveStatus);
+
+/**
+ * @route   DELETE /api/leaves/reset
+ * @desc    Delete ALL leave requests (Reset)
+ * @access  CR only (JWT protected)
+ */
+router.delete('/reset', protectCR, resetAllLeaves);
 
 /**
  * @route   DELETE /api/leaves/:id

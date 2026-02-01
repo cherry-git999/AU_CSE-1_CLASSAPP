@@ -260,3 +260,31 @@ export const deleteLeaveRequest = async (req, res) => {
     });
   }
 };
+
+/**
+ * Reset All Leave Requests Controller
+ * Deletes ALL leave requests from the database
+ * Access: CR only (JWT protected)
+ */
+export const resetAllLeaves = async (req, res) => {
+  try {
+    console.log('\n=== RESETTING ALL LEAVE REQUESTS ===');
+    
+    // Delete all leave requests
+    const result = await LeaveRequest.deleteMany({});
+    
+    console.log(`✅ Deleted ${result.deletedCount} leave requests`);
+
+    res.status(200).json({
+      message: 'All leave requests have been deleted successfully',
+      deleted: result.deletedCount
+    });
+
+  } catch (error) {
+    console.error('❌ Reset all leaves error:', error);
+    res.status(500).json({ 
+      message: 'Server error while resetting leave requests',
+      error: error.message
+    });
+  }
+};
