@@ -101,7 +101,7 @@ const AttendanceLookup = () => {
                   type="text"
                   value={regNo}
                   onChange={(e) => setRegNo(e.target.value)}
-                  placeholder="e.g., URK21CS1001"
+                  placeholder="e.g., CSE018"
                   className="w-full"
                   disabled={loading}
                   required

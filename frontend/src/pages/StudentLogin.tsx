@@ -78,7 +78,7 @@ const StudentLogin = () => {
               type="text"
               value={regNo}
               onChange={(e) => setRegNo(e.target.value)}
-              placeholder="CSE002"
+              placeholder="CSE018"
               className="w-full"
               disabled={loading}
             />

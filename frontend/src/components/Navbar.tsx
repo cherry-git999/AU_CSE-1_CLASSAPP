@@ -5,7 +5,7 @@ const Navbar = () => {
   const location = useLocation();
   const token = localStorage.getItem('token');
   const student = localStorage.getItem('student');
-  const userType = localStorage.getItem('userType');
+ // const userType = localStorage.getItem('userType');
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -42,11 +42,11 @@ const Navbar = () => {
         
         {(token || student) && (
           <div className="flex items-center gap-4">
-            {userType === 'student' && (
+            {/* {userType === 'student' && (
               <span className="hidden md:flex items-center gap-2 text-sm bg-blue-500/20 text-blue-300 font-medium px-3 py-1.5 rounded-full border border-blue-500/30">
                 <span>👁️</span> View Mode
               </span>
-            )}
+            )} */}
             <button
               onClick={handleLogout}
               className="text-white/70 hover:text-primary-400 transition-colors text-sm md:text-base font-medium"
