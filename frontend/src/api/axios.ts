@@ -31,17 +31,28 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Check userType BEFORE clearing localStorage
       const userType = localStorage.getItem('userType');
+      
+      // Check if we're already on a login page - don't redirect if so
+      const currentPath = window.location.pathname;
+      const isOnLoginPage = currentPath.includes('/login');
+      
+      // Clear localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('studentToken');
       localStorage.removeItem('student');
       localStorage.removeItem('userType');
       
-      if (userType === 'student') {
-        window.location.href = '/student/login';
-      } else {
-        window.location.href = '/admin/login';
+      // Only redirect if not already on login page
+      if (!isOnLoginPage) {
+        // Redirect based on the userType that was stored before clearing
+        if (userType === 'student') {
+          window.location.href = '/student/login';
+        } else {
+          window.location.href = '/admin/login';
+        }
       }
     }
     return Promise.reject(error);
