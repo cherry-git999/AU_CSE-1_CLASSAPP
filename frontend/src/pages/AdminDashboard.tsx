@@ -26,8 +26,8 @@ interface StudentAttendance {
 const AdminDashboard = () => {
   const [stats, setStats] = useState([
     { label: 'Total Students', value: '...', icon: '👥', gradient: 'from-blue-500 to-cyan-500' },
-    { label: 'Average Attendance', value: '...', icon: '📊', gradient: 'from-green-500 to-emerald-500' },
-    { label: 'Low Attendance', value: '...', icon: '⚠️', gradient: 'from-orange-500 to-amber-500' },
+    // { label: 'Average Attendance', value: '...', icon: '📊', gradient: 'from-green-500 to-emerald-500' },
+    // { label: 'Low Attendance', value: '...', icon: '⚠️', gradient: 'from-orange-500 to-amber-500' },
     { label: 'Announcements', value: '...', icon: '📢', gradient: 'from-purple-500 to-pink-500' },
   ]);
   const [recentAnnouncements, setRecentAnnouncements] = useState<Announcement[]>([]);

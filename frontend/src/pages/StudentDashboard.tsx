@@ -21,7 +21,7 @@ interface AttendanceRecord {
 const StudentDashboard = () => {
   const student = JSON.parse(localStorage.getItem('student') || '{}');
   const [stats, setStats] = useState([
-    { label: 'Your Attendance', value: '...', icon: '📊', gradient: 'from-green-500 to-emerald-500' },
+    // { label: 'Your Attendance', value: '...', icon: '📊', gradient: 'from-green-500 to-emerald-500' },
     { label: 'Total Students', value: '...', icon: '👥', gradient: 'from-blue-500 to-cyan-500' },
     { label: 'Your Leaves', value: '...', icon: '📋', gradient: 'from-orange-500 to-amber-500' },
     { label: 'Announcements', value: '...', icon: '📢', gradient: 'from-purple-500 to-pink-500' },

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import GlassCard from '../components/GlassCard';
 import api from '../api/axios';
@@ -33,12 +33,30 @@ const AttendanceLookup = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Auto-fill regNo and DOB if student is logged in
+  useEffect(() => {
+    const studentData = localStorage.getItem('student');
+    if (studentData) {
+      try {
+        const student = JSON.parse(studentData);
+        if (student.regNo) {
+          setRegNo(student.regNo);
+        }
+        if (student.dob) {
+          setDob(student.dob);
+        }
+      } catch (err) {
+        console.error('Error parsing student data:', err);
+      }
+    }
+  }, []);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setData(null);
 
-    if (!regNo || !dob) {
+    if (!regNo || !dob || !selectedDate) {
       setError('Please fill in all fields');
       return;
     }
@@ -124,7 +142,7 @@ const AttendanceLookup = () => {
 
               <div>
                 <label className="block text-white/80 mb-2 font-medium">
-                  Specific Date
+                  Specific Date *
                 </label>
                 <input
                   type="date"
@@ -132,7 +150,7 @@ const AttendanceLookup = () => {
                   onChange={(e) => setSelectedDate(e.target.value)}
                   className="w-full"
                   disabled={loading}
-                  placeholder="Leave empty for overall"
+                  required
                 />
               </div>
             </div>
