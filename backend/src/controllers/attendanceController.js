@@ -2,6 +2,7 @@ import Student from '../models/Student.js';
 import Attendance from '../models/Attendance.js';
 import AttendanceRecord from '../models/AttendanceRecord.js';
 import DailyAttendance from '../models/DailyAttendance.js';
+import mongoose from 'mongoose';
 
 // Allowed subjects list
 const ALLOWED_SUBJECTS = ['ME', 'MP', 'DBMS', 'DAA', 'FLAT'];
@@ -82,6 +83,12 @@ export const markAttendance = async (req, res) => {
           continue;
         }
 
+        // Validate studentId is a valid MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(studentId)) {
+          errors.push({ studentId, error: 'Invalid student ID format' });
+          continue;
+        }
+
         if (!status || !['Present', 'Absent'].includes(status)) {
           errors.push({ studentId, error: 'Status must be "Present" or "Absent"' });
           continue;
@@ -140,18 +147,31 @@ export const markAttendance = async (req, res) => {
         console.error(`Error processing student ${record.studentId}:`, error);
         errors.push({ 
           studentId: record.studentId, 
-          error: 'Failed to update attendance' 
+          error: error.message || 'Failed to update attendance' 
         });
       }
     }
 
     // Save DailyAttendance document (single source of truth)
     if (dailyRecords.length > 0) {
-      await DailyAttendance.create({
-        date,
-        subject,
-        records: dailyRecords,
-        markedBy: 'CR'
+      try {
+        await DailyAttendance.create({
+          date,
+          subject,
+          records: dailyRecords,
+          markedBy: req.user?.email || 'CR'
+        });
+      } catch (dbError) {
+        console.error('Database error while saving attendance:', dbError);
+        return res.status(500).json({ 
+          message: 'Failed to save attendance records',
+          error: dbError.message
+        });
+      }
+    } else {
+      return res.status(400).json({ 
+        message: 'No valid records to save',
+        errors: errors
       });
     }
 
@@ -169,7 +189,8 @@ export const markAttendance = async (req, res) => {
   } catch (error) {
     console.error('Attendance marking error:', error);
     res.status(500).json({ 
-      message: 'Server error during attendance marking' 
+      message: 'Server error during attendance marking',
+      error: error.message
     });
   }
 };
@@ -238,6 +259,12 @@ export const updateAttendance = async (req, res) => {
 
         if (!studentId) {
           errors.push({ studentId: 'unknown', error: 'Student ID is required' });
+          continue;
+        }
+
+        // Validate studentId is a valid MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(studentId)) {
+          errors.push({ studentId, error: 'Invalid student ID format' });
           continue;
         }
 
@@ -331,14 +358,22 @@ export const updateAttendance = async (req, res) => {
         console.error(`Error processing student ${record.studentId}:`, error);
         errors.push({ 
           studentId: record.studentId, 
-          error: 'Failed to update attendance' 
+          error: error.message || 'Failed to update attendance' 
         });
       }
     }
 
     // Update DailyAttendance document
-    existingDailyAttendance.records = dailyRecords;
-    await existingDailyAttendance.save();
+    try {
+      existingDailyAttendance.records = dailyRecords;
+      await existingDailyAttendance.save();
+    } catch (dbError) {
+      console.error('Database error while updating attendance:', dbError);
+      return res.status(500).json({ 
+        message: 'Failed to update attendance records',
+        error: dbError.message
+      });
+    }
 
     // Send response
     res.status(200).json({
@@ -356,7 +391,8 @@ export const updateAttendance = async (req, res) => {
   } catch (error) {
     console.error('Attendance update error:', error);
     res.status(500).json({ 
-      message: 'Server error during attendance update' 
+      message: 'Server error during attendance update',
+      error: error.message 
     });
   }
 };
