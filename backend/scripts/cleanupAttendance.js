@@ -28,6 +28,8 @@ const cleanupAttendance = async () => {
     await connectDB();
 
     console.log("🧹 Cleaning up attendance records...");
+    console.log("⚠️  This will delete ALL attendance history.");
+    console.log("⚠️  Students will NOT be affected.\n");
 
     // Delete all attendance summary records
     const attendanceResult = await Attendance.deleteMany({});
@@ -37,8 +39,9 @@ const cleanupAttendance = async () => {
     const dailyAttendanceResult = await DailyAttendance.deleteMany({});
     console.log(`✅ Deleted ${dailyAttendanceResult.deletedCount} daily attendance records`);
 
-    console.log("✨ Cleanup completed successfully!");
-    console.log("\n⚠️  Note: All attendance history has been cleared.");
+    console.log("\n✨ Cleanup completed successfully!");
+    console.log("✅ All student data preserved!");
+    console.log("\n📝 Use this when starting a new semester or fixing attendance errors.");
     console.log("You can now mark fresh attendance for all subjects.");
 
   } catch (error) {

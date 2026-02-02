@@ -35,17 +35,6 @@ const importStudents = async () => {
   try {
     await connectDB();
 
-    // Clear old students
-    await Student.deleteMany({});
-    console.log("✅ Old students cleared");
-
-    // Also clear attendance records to prevent orphaned references
-    await Attendance.deleteMany({});
-    console.log("✅ Old attendance summaries cleared");
-
-    await DailyAttendance.deleteMany({});
-    console.log("✅ Old daily attendance records cleared");
-
     console.log("\n📋 Reading CSV file...");
 
     fs.createReadStream(csvFilePath)
@@ -64,12 +53,45 @@ const importStudents = async () => {
       })
       .on("end", async () => {
         try {
-          await Student.insertMany(students, { ordered: false });
-          console.log(`\n✅ Successfully imported ${students.length} students`);
-          console.log("\n⚠️  Important: All previous attendance records have been cleared.");
-          console.log("You can now mark fresh attendance for these students.");
+          let newCount = 0;
+          let updatedCount = 0;
+          let unchangedCount = 0;
+
+          // Process each student - update if exists, create if new
+          for (const studentData of students) {
+            const existingStudent = await Student.findOne({ regNo: studentData.regNo });
+            
+            if (existingStudent) {
+              // Check if any data changed
+              const nameChanged = existingStudent.name !== studentData.name;
+              const dobChanged = existingStudent.dob?.getTime() !== studentData.dob.getTime();
+              const emailChanged = existingStudent.email !== studentData.email;
+
+              if (nameChanged || dobChanged || emailChanged) {
+                // Update existing student (keeps same _id, preserves attendance links)
+                existingStudent.name = studentData.name;
+                existingStudent.dob = studentData.dob;
+                existingStudent.email = studentData.email;
+                await existingStudent.save();
+                updatedCount++;
+              } else {
+                unchangedCount++;
+              }
+            } else {
+              // Create new student
+              await Student.create(studentData);
+              newCount++;
+            }
+          }
+
+          console.log(`\n✅ Import completed successfully!`);
+          console.log(`   📊 New students: ${newCount}`);
+          console.log(`   🔄 Updated students: ${updatedCount}`);
+          console.log(`   ✓  Unchanged students: ${unchangedCount}`);
+          console.log(`   📝 Total in CSV: ${students.length}`);
+          console.log("\n✨ Attendance records preserved for all existing students!");
         } catch (error) {
-          console.error("❌ Insert failed:", error.message);
+          console.error("❌ Import failed:", error.message);
           process.exit(1);
         } finally {
           mongoose.connection.close();
