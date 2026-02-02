@@ -4,6 +4,8 @@ import csv from "csv-parser";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import Student from "../src/models/Student.js";
+import Attendance from "../src/models/Attendance.js";
+import DailyAttendance from "../src/models/DailyAttendance.js";
 
 dotenv.config();
 
@@ -33,8 +35,18 @@ const importStudents = async () => {
   try {
     await connectDB();
 
+    // Clear old students
     await Student.deleteMany({});
-    console.log("Old students cleared");
+    console.log("✅ Old students cleared");
+
+    // Also clear attendance records to prevent orphaned references
+    await Attendance.deleteMany({});
+    console.log("✅ Old attendance summaries cleared");
+
+    await DailyAttendance.deleteMany({});
+    console.log("✅ Old daily attendance records cleared");
+
+    console.log("\n📋 Reading CSV file...");
 
     fs.createReadStream(csvFilePath)
       .pipe(csv())
@@ -53,12 +65,15 @@ const importStudents = async () => {
       .on("end", async () => {
         try {
           await Student.insertMany(students, { ordered: false });
-          console.log(`Successfully imported ${students.length} students`);
+          console.log(`\n✅ Successfully imported ${students.length} students`);
+          console.log("\n⚠️  Important: All previous attendance records have been cleared.");
+          console.log("You can now mark fresh attendance for these students.");
         } catch (error) {
           console.error("❌ Insert failed:", error.message);
           process.exit(1);
         } finally {
           mongoose.connection.close();
+          console.log("\n🔌 Database connection closed");
         }
       })
       .on("error", (error) => {

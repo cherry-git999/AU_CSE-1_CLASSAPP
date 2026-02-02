@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node seedDatabase.js"
+    "seed": "node seedDatabase.js",
+    "import": "node scripts/importStudents.js",
+    "cleanup": "node scripts/cleanupAttendance.js"
   },
   "keywords": [
     "express",
